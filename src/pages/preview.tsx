@@ -247,8 +247,8 @@ const AttendancePreview = () => {
         appendixImg,
         canvasSize.width * 0.1,
         canvasSize.height * 0.12,
-        canvasSize.width / 2,
-        canvasSize.height / 2
+        canvasSize.width * (3 / 4),
+        canvasSize.width * (3 / 4) * (appendixImg.height / appendixImg.width)
       );
     };
   }, [canvasSize, userInput, fontStyleOne, fontStyleTwo]);

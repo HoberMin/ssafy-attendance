@@ -5,58 +5,19 @@ import { useRouter } from "next/router";
 import { Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-interface IFUserInfo {
-  name: string;
-  birthday: string;
-  absentYear: string;
-  absentMonth: string;
-  absentDay: string;
-  absentTime: number;
-  absentCategory: number;
-  absentReason: string;
-  absentDetail: string;
-  absentPlace: string;
-  signatureUrl: string;
-  campus: string;
-  class: string;
-  appendix: string;
-}
+import { getCurrentDate } from "@/utils/getCurrentDate";
+import {
+  absentCategoryCoordinate,
+  absentDetailReasonCoordinate,
+  absentTimeCoordinate,
+  fontStyleOneCoordinate,
+  fontStyleTwoCoordinate,
+} from "./constants/coordinate";
+import { useConfirmStore } from "@/store/confirmStore";
 
 const AttendancePreview = () => {
   const router = useRouter();
-
-  const today = new Date();
-  const currentYear = String(today.getFullYear()).slice(2, 4);
-  const currentMonth = String(today.getMonth() + 1);
-  const currentDay = String(today.getDate()).padStart(2, "0");
-  const currentDate = {
-    currentYear: currentYear,
-    currentMonth: currentMonth,
-    currentDay: currentDay,
-  };
-
-  const userInput = {
-    name: "홍길동",
-    birthday: "1995-05-15",
-    absentYear: "25",
-    absentMonth: "01",
-    absentDay: "11",
-    absentTime: 1,
-    absentCategory: 1,
-    absentReason:
-      "병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료",
-    // 세부내용 24자 이후 줄넘김
-    absentDetail:
-      "갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉궑뷁갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉",
-    absentPlace: "서울 강남구",
-    signatureUrl: "/체크.png",
-    campus: "서울 캠퍼스",
-    class: "3학년 1반",
-    appendix: "/체크.png",
-  };
-
-  const docsImageUrls = ["/소명확인서.png", "/소명확인서-별첨.png"];
+  const { formData: userInput } = useConfirmStore();
 
   const canvas1Ref = useRef<HTMLCanvasElement | null>(null);
   const canvas2Ref = useRef<HTMLCanvasElement | null>(null);
@@ -66,44 +27,11 @@ const AttendancePreview = () => {
   const [fontStyleReason, setFontStyleReason] = useState<string>("");
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
+  const currentDate = getCurrentDate();
+
+  const docsImageUrls = ["/소명확인서.png", "/소명확인서-별첨.png"];
+
   const A4_RATIO = 1.4142;
-
-  const fontStyleTwoCoordinate: Record<string, [number, number]> = {
-    currentYear: [0.374, 0.9005],
-    currentMonth: [0.485, 0.9005],
-    currentDay: [0.585, 0.9005],
-  };
-
-  const fontStyleOneCoordinate: Record<string, [number, number]> = {
-    name: [0.32, 0.2293],
-    birthday: [0.66, 0.229],
-    absentYear: [0.354, 0.273],
-    absentMonth: [0.444, 0.273],
-    absentDay: [0.52, 0.273],
-
-    absentPlace: [0.32, 0.647],
-    signature: [0.8, 0.64],
-    absentName: [0.32, 0.68],
-  };
-
-  // 공가/사유 체크박스
-  const absentCategoryCoordinate = [
-    [0.102, 0.201],
-    [0.102, 0.2223],
-  ];
-  // 공가/사유 내용
-  const absentDetailReasonCoordinate = [
-    [0.31, 0.413],
-    [0.53, 0.455],
-  ];
-
-  const absentTime = [
-    [0.6075, 0.26],
-    [0.7, 0.26],
-    [0.7915, 0.26],
-  ];
-
-  const absentDetailCoordinate = [0.35, 0.55];
 
   // 화면 크기 변경 감지 , 캔버스 크기 조정
   useEffect(() => {
@@ -153,9 +81,8 @@ const AttendancePreview = () => {
     ctx1.scale(2, 2);
     ctx2.scale(2, 2);
 
-    const checkSize = canvas1.width * 0.018;
-
     const fontSize = Math.max(canvasSize.width * 0.02, 12);
+    const checkSize = canvas1.width * 0.018;
 
     setFontStyleOne(`${fontSize + 4}px serif`);
     setFontStyleTwo(`bold ${fontSize * 1.7}px serif`);
@@ -174,48 +101,41 @@ const AttendancePreview = () => {
       ctx1.drawImage(docsImg1, 0, 0, canvasSize.width, canvasSize.height);
       ctx1.font = fontStyleOne;
 
-      // 텍스트 렌더링
-      Object.keys(fontStyleOneCoordinate).forEach((key) => {
-        const coord = fontStyleOneCoordinate[key];
-        const value = userInput[key as keyof IFUserInfo] || "";
-        ctx1.fillText(
-          value as string,
-          coord[0] * canvasSize.width,
-          coord[1] * canvasSize.height
-        );
-      });
-      const absentReaseon1 = userInput.absentDetail.slice(0, 20);
-      const absentReaseon2 = userInput.absentDetail.slice(20, 40);
-      const absentReaseon3 = userInput.absentDetail.slice(40, 60);
-      const absentReaseon4 = userInput.absentDetail.slice(60, 80);
+      // [교육생 및 공가/사유 정보, 공가사유 장소, 서명 이름] 텍스트 렌더링
+      const renderText = (
+        coordinate: Record<string, [number, number]>,
+        textData: any
+      ) => {
+        Object.keys(coordinate).forEach((key) => {
+          const coord = coordinate[key];
+          let value;
+          if (key === "absentName") {
+            value = textData.name;
+          } else {
+            value = textData[key] || "";
+          }
+          console.log(key, value);
+          ctx1.fillText(
+            String(value),
+            coord[0] * canvasSize.width,
+            coord[1] * canvasSize.height
+          );
+        });
+        console.log("_");
+      };
+      renderText(fontStyleOneCoordinate, userInput);
 
-      ctx1.fillText(
-        absentReaseon1,
-        absentDetailCoordinate[0] * canvasSize.width,
-        absentDetailCoordinate[1] * canvasSize.height
-      );
-      ctx1.fillText(
-        absentReaseon2,
-        absentDetailCoordinate[0] * canvasSize.width,
-        (absentDetailCoordinate[1] + 0.02) * canvasSize.height
-      );
-      ctx1.fillText(
-        absentReaseon3,
-        absentDetailCoordinate[0] * canvasSize.width,
-        (absentDetailCoordinate[1] + 0.04) * canvasSize.height
-      );
-      ctx1.fillText(
-        absentReaseon4,
-        absentDetailCoordinate[0] * canvasSize.width,
-        (absentDetailCoordinate[1] + 0.06) * canvasSize.height
+      // [오전/오후/종일] 체크이미지 렌더링
+      const absentTimeCoord = absentTimeCoordinate[userInput.absentTime];
+      ctx1.drawImage(
+        imgCheck,
+        absentTimeCoord[0] * canvasSize.width,
+        absentTimeCoord[1] * canvasSize.height,
+        checkSize / 2,
+        checkSize / 2
       );
 
-      ctx1.fillText(
-        userInput.name,
-        fontStyleOneCoordinate.absentName[0] * canvasSize.width,
-        fontStyleOneCoordinate.absentName[1] * canvasSize.height
-      );
-
+      // 공가, 사유 체크이미지 렌더링
       const checkedAbsentCategory = userInput.absentCategory;
       ctx1.drawImage(
         imgCheck,
@@ -225,58 +145,72 @@ const AttendancePreview = () => {
         checkSize / 2
       );
 
-      // 공가/사유 박스
       ctx1.font = fontStyleReason;
+
+      // 공가/사유 내용 텍스트 렌더링
+      const renderReason = (
+        coordinates: [[number, number], [number, number]],
+        maxLength: number[]
+      ) => {
+        const text = userInput.absentReason;
+        maxLength.forEach((len, index) => {
+          const lineText = text.slice(
+            maxLength.slice(0, index).reduce((acc, cur) => acc + cur, 0),
+            maxLength.slice(0, index + 1).reduce((acc, cur) => acc + cur, 0)
+          );
+
+          if (lineText) {
+            const coord = coordinates[index];
+            ctx1.fillText(
+              lineText,
+              coord[0] * canvasSize.width,
+              coord[1] * canvasSize.height
+            );
+          }
+        });
+      };
+
       if (userInput.absentCategory === 0) {
-        // absentReason
-        const absentReason1 = userInput.absentReason.slice(0, 20);
-        const absentReason2 = userInput.absentReason.slice(20, 40);
-
-        ctx1.fillText(
-          absentReason1,
-          absentDetailReasonCoordinate[userInput.absentCategory][0] *
-            canvasSize.width,
-          absentDetailReasonCoordinate[userInput.absentCategory][1] *
-            canvasSize.height
-        );
-        ctx1.fillText(
-          absentReason2,
-          absentDetailReasonCoordinate[userInput.absentCategory][0] *
-            canvasSize.width,
-          (absentDetailReasonCoordinate[userInput.absentCategory][1] + 0.02) *
-            canvasSize.height
-        );
+        // 공가 선택시 내용
+        renderReason(absentDetailReasonCoordinate, [20, 20]);
       } else if (userInput.absentCategory === 1) {
-        const absentReason1 = userInput.absentReason.slice(0, 12);
-        const absentReason2 = userInput.absentReason.slice(12, 40);
-
-        ctx1.fillText(
-          absentReason1,
-          absentDetailReasonCoordinate[userInput.absentCategory][0] *
-            canvasSize.width,
-          absentDetailReasonCoordinate[userInput.absentCategory][1] *
-            canvasSize.height
-        );
-        ctx1.fillText(
-          absentReason2,
-          (absentDetailReasonCoordinate[userInput.absentCategory][0] - 0.29) *
-            canvasSize.width,
-          (absentDetailReasonCoordinate[userInput.absentCategory][1] + 0.023) *
-            canvasSize.height
+        // 사유 선택시 내용
+        renderReason(
+          [
+            absentDetailReasonCoordinate[1],
+            [
+              absentDetailReasonCoordinate[1][0] - 0.29,
+              absentDetailReasonCoordinate[1][1] + 0.023,
+            ],
+          ],
+          [12, 28]
         );
       }
 
-      // 마지막 날짜
-      ctx1.font = fontStyleTwo;
-      Object.keys(fontStyleTwoCoordinate).forEach((key) => {
-        const coord = fontStyleTwoCoordinate[key];
-        const value = currentDate[key as keyof typeof currentDate] || "";
-        ctx1.fillText(
-          value as string,
-          coord[0] * canvasSize.width,
-          coord[1] * canvasSize.height
-        );
-      });
+      // [세부내용] 텍스트 렌더링
+      const renderLongText = (
+        text: string,
+        coordinate: [number, number],
+        lineHeight: number,
+        maxLength: number
+      ) => {
+        for (let i = 0; i < 4; i++) {
+          const lineText = text.slice(i * maxLength, (i + 1) * maxLength);
+          if (lineText) {
+            ctx1.fillText(
+              lineText,
+              coordinate[0] * canvasSize.width,
+              (coordinate[1] + lineHeight * i) * canvasSize.height
+            );
+          }
+        }
+      };
+      renderLongText(
+        userInput.absentDetail,
+        fontStyleOneCoordinate.absentDetailCoordinate,
+        0.02,
+        20
+      );
 
       // 서명 이미지
       const signatureWidth = canvasSize.width * 0.14;
@@ -289,15 +223,17 @@ const AttendancePreview = () => {
         signatureHeight
       );
 
-      // 체크 마크
-      const absentTimeCoord = absentTime[userInput.absentTime];
-      ctx1.drawImage(
-        imgCheck,
-        absentTimeCoord[0] * canvasSize.width,
-        absentTimeCoord[1] * canvasSize.height,
-        checkSize / 2,
-        checkSize / 2
-      );
+      // 마지막 날짜
+      ctx1.font = fontStyleTwo;
+      Object.keys(fontStyleTwoCoordinate).forEach((key) => {
+        const coord = fontStyleTwoCoordinate[key];
+        const value = currentDate[key as keyof typeof currentDate] || "";
+        ctx1.fillText(
+          value as string,
+          coord[0] * canvasSize.width,
+          coord[1] * canvasSize.height
+        );
+      });
     };
 
     const docsImg2 = new Image();
@@ -334,7 +270,6 @@ const AttendancePreview = () => {
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.addPage();
 
-      //
       const canvas2 = canvas2Ref.current;
       if (!canvas2) return;
 

@@ -81,7 +81,7 @@ const AttendancePreview = () => {
     ctx1.scale(2, 2);
     ctx2.scale(2, 2);
 
-    const fontSize = Math.max(canvasSize.width * 0.02, 12);
+    const fontSize = canvasSize.width * 0.02;
     const checkSize = canvas1.width * 0.018;
 
     setFontStyleOne(`${fontSize + 4}px serif`);
@@ -114,14 +114,12 @@ const AttendancePreview = () => {
           } else {
             value = textData[key] || "";
           }
-          console.log(key, value);
           ctx1.fillText(
             String(value),
             coord[0] * canvasSize.width,
             coord[1] * canvasSize.height
           );
         });
-        console.log("_");
       };
       renderText(fontStyleOneCoordinate, userInput);
 

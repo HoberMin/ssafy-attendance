@@ -85,11 +85,17 @@ const AttendancePreview = () => {
     const docsImg1 = new Image();
     docsImg1.src = docsImageUrls[0];
 
+    const docsImg2 = new Image();
+    docsImg2.src = docsImageUrls[1];
+
     const imgCheck = new Image();
     imgCheck.src = "/체크.png";
 
     const signatureImage = new Image();
     signatureImage.src = userInput.signatureUrl;
+
+    const appendixImg = new Image();
+    appendixImg.src = userInput.appendix;
 
     docsImg1.onload = () => {
       ctx1.drawImage(docsImg1, 0, 0, canvasSize.width, canvasSize.height);
@@ -229,22 +235,15 @@ const AttendancePreview = () => {
       });
     };
 
-    const docsImg2 = new Image();
-    docsImg2.src = docsImageUrls[1];
     docsImg2.onload = () => {
       ctx2.drawImage(docsImg2, 0, 0, canvasSize.width, canvasSize.height);
-
-      const appendixImg = new Image();
-      appendixImg.src = userInput.appendix;
-      appendixImg.onload = () => {
-        ctx2.drawImage(
-          appendixImg,
-          canvasSize.width * 0.1,
-          canvasSize.height * 0.12,
-          canvasSize.width * (3 / 4),
-          canvasSize.width * (3 / 4) * (appendixImg.height / appendixImg.width)
-        );
-      };
+      ctx2.drawImage(
+        appendixImg,
+        canvasSize.width * 0.1,
+        canvasSize.height * 0.12,
+        canvasSize.width * (3 / 4),
+        canvasSize.width * (3 / 4) * (appendixImg.height / appendixImg.width)
+      );
     };
   }, [canvasSize, userInput]);
 

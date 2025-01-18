@@ -270,17 +270,18 @@ const AttendancePreview = () => {
       if (!canvas2) return;
 
       const DATA_URL_SCALE = 0.8;
-      const imgData = canvas1.toDataURL("image/png", DATA_URL_SCALE);
+
+      const imgData = canvas1.toDataURL("image/jpeg", DATA_URL_SCALE);
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
       const imgHeight = 297;
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight, "", "FAST");
       pdf.addPage();
 
-      const imgData2 = canvas2.toDataURL("image/png", DATA_URL_SCALE);
+      const imgData2 = canvas2.toDataURL("image/jpeg", DATA_URL_SCALE);
 
-      pdf.addImage(imgData2, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData2, "JPEG", 0, 0, imgWidth, imgHeight, "", "FAST");
       pdf.save(
         `${userInput.absentYear}${userInput.absentMonth}${userInput.absentDay}_출결확인서_${userInput.name}[${userInput.campus}_${userInput.class}반].pdf`
       );

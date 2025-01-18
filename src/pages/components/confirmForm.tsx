@@ -226,7 +226,7 @@ const AbsenceForm = () => {
 
       const transformedData = {
         name: formData.name,
-        birthday: formData.birthDate.replace(/\./g, "-"), // YY.MM.DD -> YYYY-MM-DD
+        birthday: formData.birthDate.replace(/\./g, "-"),
         absentYear: absenceYear.slice(2, 4),
         absentMonth: absenceMonth,
         absentDay: absenceDay,
@@ -236,7 +236,7 @@ const AbsenceForm = () => {
         absentDetail: formData.details.replaceAll("\n", " "),
         absentPlace: formData.place,
         signatureUrl: signatureData || "",
-        campus: `${formData.location} 캠퍼스`,
+        campus: `${formData.location}`,
         class: formData.classNumber,
         appendix: fileBase64, // base64 문자열로 변환된 파일
       };

@@ -12,7 +12,7 @@ import {
   absentTimeCoordinate,
   fontStyleOneCoordinate,
   fontStyleTwoCoordinate,
-} from "./constants/coordinate";
+} from "../constants/coordinate";
 import { useConfirmStore } from "@/store/confirmStore";
 
 const AttendancePreview = () => {

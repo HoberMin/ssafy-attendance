@@ -248,6 +248,22 @@ const AttendancePreview = () => {
   }, [canvasSize, userInput]);
 
   const saveImg = async () => {
+    // GTM 이벤트 트래킹
+    try {
+      // @ts-ignore
+      window.dataLayer?.push({
+        event: "pdf_download",
+        user_info: {
+          campus: userInput.campus,
+          class: userInput.class,
+          name: userInput.name,
+          date: `${userInput.absentYear}${userInput.absentMonth}${userInput.absentDay}`,
+        },
+      });
+    } catch (e) {
+      console.error("GTM 이벤트 에러", e);
+    }
+
     if (!canvas1Ref.current || !canvas2Ref.current) return;
 
     const options = {
@@ -280,8 +296,19 @@ const AttendancePreview = () => {
       pdf.save(
         `${userInput.absentYear}${userInput.absentMonth}${userInput.absentDay}_출결확인서_${userInput.name}[${userInput.campus}_${userInput.class}반].pdf`
       );
-    } catch {
-      //
+    } catch (error) {
+      // PDF 생성 에러 시 GTM 이벤트
+      try {
+        // @ts-ignore
+        window.dataLayer?.push({
+          event: "pdf_download_error",
+          error_info: {
+            message: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+      } catch (e) {
+        console.error("GTM 에러 이벤트 에러", e);
+      }
     }
   };
 

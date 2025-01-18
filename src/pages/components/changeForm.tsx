@@ -412,7 +412,7 @@ const AttendanceChangeForm = () => {
               <Pen className="w-4 h-4 text-[#3396f4]" />
               서명
             </Label>
-            <div className="border rounded-md p-2 bg-white">
+            <div className="inline-block border rounded-md p-2 bg-white">
               <canvas
                 ref={canvasRef}
                 className="border rounded cursor-crosshair w-full touch-none"
@@ -420,6 +420,7 @@ const AttendanceChangeForm = () => {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseOut={stopDrawing}
+                style={{ width: "250px", height: "150px" }}
                 aria-label="서명 캔버스"
               />
               <Button

@@ -236,13 +236,15 @@ const AttendancePreview = () => {
 
       const appendixImg = new Image();
       appendixImg.src = userInput.appendix;
-      ctx2.drawImage(
-        appendixImg,
-        canvasSize.width * 0.1,
-        canvasSize.height * 0.12,
-        canvasSize.width * (3 / 4),
-        canvasSize.width * (3 / 4) * (appendixImg.height / appendixImg.width)
-      );
+      appendixImg.onload = () => {
+        ctx2.drawImage(
+          appendixImg,
+          canvasSize.width * 0.1,
+          canvasSize.height * 0.12,
+          canvasSize.width * (3 / 4),
+          canvasSize.width * (3 / 4) * (appendixImg.height / appendixImg.width)
+        );
+      };
     };
   }, [canvasSize, userInput]);
 

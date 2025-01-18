@@ -275,7 +275,7 @@ const AttendancePreview = () => {
 
       pdf.addImage(imgData2, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save(
-        `${userInput.absentYear}${userInput.absentMonth}${userInput.absentDay}_출결확인서_${userInput.name}[${userInput.class}].pdf`
+        `${userInput.absentYear}${userInput.absentMonth}${userInput.absentDay}_출결확인서_${userInput.name}[${userInput.campus}_${userInput.class}반].pdf`
       );
     });
   };

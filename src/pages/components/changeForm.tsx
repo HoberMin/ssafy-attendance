@@ -469,7 +469,7 @@ const AttendanceChangeForm = () => {
             className="w-full bg-[#3396f4] hover:bg-[#3396f4]/80 text-white py-2 rounded-lg 
                      transition-colors duration-200 focus:ring-2 focus:ring-[#3396f4] focus:ring-offset-2"
           >
-            제출하기
+            양식 미리보기
           </Button>
         </form>
       </CardContent>

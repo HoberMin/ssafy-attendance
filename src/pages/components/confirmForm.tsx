@@ -34,25 +34,64 @@ interface FormData {
 
 const AbsenceForm = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
-    location: "",
-    classNumber: "",
-    name: "",
-    birthDate: "",
-    absenceDate: "",
-    absentCategory: "공가",
-    category: "오전",
-    reason: "",
-    details: "",
-    place: "",
-  });
+  const { formData: userInput, setFormData: setConfirmForm } =
+    useConfirmStore();
 
+  // 초기값 설정 함수
+  const getInitialFormData = () => {
+    if (!userInput.name) {
+      return {
+        location: "",
+        classNumber: "",
+        name: "",
+        birthDate: "",
+        absenceDate: "",
+        absentCategory: "공가",
+        category: "오전",
+        reason: "",
+        details: "",
+        place: "",
+      };
+    }
+
+    // Zustand store 데이터로부터 폼 데이터 변환
+    const [year, month, day] = userInput.birthday.split("-");
+    return {
+      location: userInput.campus,
+      classNumber: userInput.class,
+      name: userInput.name,
+      birthDate: `${year}.${month}.${day}`,
+      absenceDate: `20${userInput.absentYear}-${userInput.absentMonth.padStart(
+        2,
+        "0"
+      )}-${userInput.absentDay.padStart(2, "0")}`,
+      absentCategory: userInput.absentCategory === 0 ? "공가" : "사유",
+      category: (() => {
+        switch (userInput.absentTime) {
+          case 0:
+            return "오전";
+          case 1:
+            return "오후";
+          case 2:
+            return "종일";
+          default:
+            return "오전";
+        }
+      })(),
+      reason: userInput.absentReason,
+      details: userInput.absentDetail,
+      place: userInput.absentPlace,
+    };
+  };
+
+  const [formData, setFormData] = useState<FormData>(getInitialFormData());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [signatureData, setSignatureData] = useState<string | null>(
+    userInput.signatureUrl || null
+  );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
-  const { setFormData: setConfirmForm } = useConfirmStore();
 
   const locations = ["서울", "대전", "구미", "부울경", "광주"];
 
@@ -90,6 +129,7 @@ const AbsenceForm = () => {
       [name]: value,
     }));
   };
+
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const maxLength = name === "reason" ? 40 : 80;
@@ -107,17 +147,47 @@ const AbsenceForm = () => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        // 캔버스 크기를 작게 설정
         canvas.width = 250;
         canvas.height = 150;
-
         ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5; // 선 두께를 더 얇게 설정
+        ctx.lineWidth = 1.5;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
       }
     }
   }, []);
+
+  // 서명 이미지 초기 로드
+  useEffect(() => {
+    if (canvasRef.current && userInput.signatureUrl) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = userInput.signatureUrl;
+      }
+    }
+  }, [userInput.signatureUrl]);
+
+  // 증빙서류 이미지 초기 로드
+  useEffect(() => {
+    if (userInput.appendix) {
+      const convertBase64ToFile = async (base64String: string) => {
+        const response = await fetch(base64String);
+        const blob = await response.blob();
+        return new File([blob], "appendix.png", { type: "image/png" });
+      };
+
+      convertBase64ToFile(userInput.appendix)
+        .then((file) => setDocumentFile(file))
+        .catch((error) =>
+          console.error("Error converting base64 to file:", error)
+        );
+    }
+  }, [userInput.appendix]);
 
   const getCanvasMousePosition = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return { x: 0, y: 0 };
@@ -176,7 +246,6 @@ const AbsenceForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 파일을 base64로 변환하는 함수
     const convertFileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -186,12 +255,10 @@ const AbsenceForm = () => {
       });
     };
 
-    // 날짜 분리
     const [absenceYear, absenceMonth, absenceDay] = formData.absenceDate
       .split("-")
       .map(String);
 
-    // 시간 및 카테고리 매핑
     const getAbsentTime = (category: string): number => {
       switch (category) {
         case "오전":
@@ -205,7 +272,6 @@ const AbsenceForm = () => {
       }
     };
 
-    // 시간 및 카테고리 매핑
     const getAbsentCategory = (category: string): number => {
       switch (category) {
         case "공가":
@@ -218,7 +284,6 @@ const AbsenceForm = () => {
     };
 
     try {
-      // 파일이 있을 경우 base64로 변환
       let fileBase64 = "";
       if (documentFile) {
         fileBase64 = await convertFileToBase64(documentFile);
@@ -238,16 +303,13 @@ const AbsenceForm = () => {
         signatureUrl: signatureData || "",
         campus: `${formData.location}`,
         class: formData.classNumber,
-        appendix: fileBase64, // base64 문자열로 변환된 파일
+        appendix: fileBase64,
       };
-
-      console.log(transformedData);
 
       setConfirmForm(transformedData);
       router.push("/preview");
     } catch (error) {
       console.error("파일 변환 중 에러 발생:", error);
-      // 에러 처리 로직 추가 (예: 사용자에게 알림)
     }
   };
 
@@ -368,8 +430,8 @@ const AbsenceForm = () => {
               name="absenceDate"
               value={formData.absenceDate}
               onChange={handleInputChange}
-              min="1900-01-01" // 최소 날짜 설정
-              max="2099-12-31" // 최대 날짜 설정
+              min="1900-01-01"
+              max="2099-12-31"
               required
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
@@ -521,6 +583,7 @@ const AbsenceForm = () => {
               {formData.details.length}/80자
             </div>
           </div>
+
           {/* 서명 부분 */}
           <div className="space-y-2">
             <Label
@@ -566,7 +629,11 @@ const AbsenceForm = () => {
               type="file"
               id="document"
               accept="image/*"
-              onChange={(e: any) => setDocumentFile(e.target.files[0])}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                if (e.target.files && e.target.files[0]) {
+                  setDocumentFile(e.target.files[0]);
+                }
+              }}
               required
               aria-required="true"
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
@@ -578,7 +645,7 @@ const AbsenceForm = () => {
             className="w-full mt-[20px] bg-[#3396f4] hover:bg-[#3396f4]/80 text-white py-2 rounded-lg 
                      transition-colors duration-200 focus:ring-2 focus:ring-[#3396f4] focus:ring-offset-2"
           >
-            제출하기
+            양식 미리보기
           </Button>
         </form>
       </CardContent>

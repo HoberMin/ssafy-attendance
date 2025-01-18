@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentDate } from "@/utils/getCurrentDate";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Download } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -289,7 +289,14 @@ const AttendancePreview = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg overflow-hidden rounded-none">
       <CardContent className="p-6 space-y-6">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 gap-2">
+          <Button
+            onClick={() => router.push("/")}
+            className="bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-2"
+          >
+            <Pencil className="w-4 h-4" />
+            수정하기
+          </Button>
           <Button
             onClick={saveImg}
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"

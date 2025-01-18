@@ -6,41 +6,28 @@ import jsPDF from "jspdf";
 import { Download } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { useConfirmStore } from "@/store/confirmStore";
 import {
   DOCS_DATE_COORD,
   TEXT_COORD,
   REASON_CHECK_COORD,
   SIGNATURE_COORD,
 } from "@/constants/coordinate2";
-import { IFFormData } from "@/store/changeStore";
+import useAttendanceStore from "@/store/changeStore";
 
 const AttendancePreview = () => {
   const router = useRouter();
-  // const { formData: userInput } = useConfirmStore();
-  const userInput: IFFormData = {
-    campusNumber: "12",
-    campusName: "지역지역",
-    name: "이름이에용",
-    birthDate: "99-09-09",
-    reason: 0, // "입실 미클릭",
-    attendanceDate: "25.01.01",
-    attendanceTime: "10:11",
-    changeDate: "25.01.01",
-    changeTime: "13:13",
-    changeReason: "이유에요이요요요이유유유잉요요ㅛ용요이용",
-    signatureData: "/체크.png",
-  };
+  const { formData: userInput } = useAttendanceStore();
+
   const parsedUserInput = {
     ...userInput,
-    attendanceDateYear: "20" + userInput.attendanceDate.slice(0, 2),
-    attendanceDateMonth: userInput.attendanceDate.slice(3, 5),
-    attendanceDateDay: userInput.attendanceDate.slice(6, 8),
+    attendanceDateYear: userInput.attendanceDate.slice(2, 4),
+    attendanceDateMonth: userInput.attendanceDate.slice(5, 7),
+    attendanceDateDay: userInput.attendanceDate.slice(8, 10),
     attendanceTimeHour: userInput.attendanceTime.slice(0, 2),
     attendanceTimeMinute: userInput.attendanceTime.slice(3, 5),
-    changeDateYear: "20" + userInput.changeDate.slice(0, 2),
-    changeDateMonth: userInput.changeDate.slice(3, 5),
-    changeDateDay: userInput.attendanceDate.slice(6, 8),
+    changeDateYear: userInput.changeDate.slice(2, 4),
+    changeDateMonth: userInput.changeDate.slice(5, 7),
+    changeDateDay: userInput.attendanceDate.slice(8, 10),
     changeTimeHour: userInput.changeTime.slice(0, 2),
     changeTimeMinute: userInput.changeTime.slice(3, 5),
     requestName: userInput.name,
@@ -192,11 +179,7 @@ const AttendancePreview = () => {
 
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight, "", "FAST");
       pdf.save(
-        `${userInput.attendanceDate.slice(0, 2)}${
-          parsedUserInput.attendanceDateMonth
-        }${parsedUserInput.attendanceDateDay}_출결변경요청서_${
-          userInput.name
-        }[${userInput.campusName}_${userInput.campusNumber}반].pdf`
+        `${parsedUserInput.attendanceDateYear}${parsedUserInput.attendanceDateMonth}${parsedUserInput.attendanceDateDay}_출결변경요청서_${userInput.name}[${userInput.campusName}_${userInput.campusNumber}반].pdf`
       );
     } catch {
       //

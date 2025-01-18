@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import { useRouter } from "next/router";
-import { Download } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentDate } from "@/utils/getCurrentDate";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { Download } from "lucide-react";
+import { useRouter } from "next/router";
+import { useEffect, useRef, useState } from "react";
 import {
   absentCategoryCoordinate,
   absentDetailReasonCoordinate,
@@ -22,9 +22,6 @@ const AttendancePreview = () => {
   const canvas1Ref = useRef<HTMLCanvasElement | null>(null);
   const canvas2Ref = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [fontStyleOne, setFontStyleOne] = useState<string>("");
-  const [fontStyleTwo, setFontStyleTwo] = useState<string>("");
-  const [fontStyleReason, setFontStyleReason] = useState<string>("");
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const currentDate = getCurrentDate();
@@ -85,10 +82,6 @@ const AttendancePreview = () => {
     const fontSize = canvasSize.width * 0.02;
     const checkSize = canvas1.width * 0.018;
 
-    setFontStyleOne(`${fontSize + 4}px serif`);
-    setFontStyleTwo(`bold ${fontSize * 1.7}px serif`);
-    setFontStyleReason(`${fontSize + 2}px serif`);
-
     const docsImg1 = new Image();
     docsImg1.src = docsImageUrls[0];
 
@@ -100,7 +93,7 @@ const AttendancePreview = () => {
 
     docsImg1.onload = () => {
       ctx1.drawImage(docsImg1, 0, 0, canvasSize.width, canvasSize.height);
-      ctx1.font = fontStyleOne;
+      ctx1.font = `${fontSize + 4}px serif`;
 
       // [교육생 및 공가/사유 정보, 공가사유 장소, 서명 이름] 텍스트 렌더링
       const renderText = (
@@ -126,6 +119,7 @@ const AttendancePreview = () => {
 
       // [오전/오후/종일] 체크이미지 렌더링
       const absentTimeCoord = absentTimeCoordinate[userInput.absentTime];
+
       ctx1.drawImage(
         imgCheck,
         absentTimeCoord[0] * canvasSize.width,
@@ -144,7 +138,7 @@ const AttendancePreview = () => {
         checkSize / SCALE
       );
 
-      ctx1.font = fontStyleReason;
+      ctx1.font = `${fontSize + 2}px serif`;
 
       // 공가/사유 내용 텍스트 렌더링
       const renderReason = (
@@ -223,7 +217,7 @@ const AttendancePreview = () => {
       );
 
       // 마지막 날짜
-      ctx1.font = fontStyleTwo;
+      ctx1.font = `bold ${fontSize * 1.7}px serif`;
       Object.keys(fontStyleTwoCoordinate).forEach((key) => {
         const coord = fontStyleTwoCoordinate[key];
         const value = currentDate[key as keyof typeof currentDate] || "";
@@ -250,7 +244,7 @@ const AttendancePreview = () => {
         canvasSize.width * (3 / 4) * (appendixImg.height / appendixImg.width)
       );
     };
-  }, [canvasSize, userInput, fontStyleOne, fontStyleTwo]);
+  }, [canvasSize, userInput]);
 
   const saveImg = async () => {
     if (!canvas1Ref.current || !canvas2Ref.current) return;
@@ -264,7 +258,7 @@ const AttendancePreview = () => {
 
     try {
       const canvas1 = await html2canvas(canvas1Ref.current, options);
-      const canvas2 = await html2canvas(canvas1Ref.current, options);
+      const canvas2 = await html2canvas(canvas2Ref.current, options);
 
       if (!canvas1) return;
       if (!canvas2) return;

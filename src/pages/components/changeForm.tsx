@@ -15,6 +15,7 @@ import {
   IdCard,
 } from "lucide-react";
 import useAttendanceStore from "@/store/changeStore";
+import { useRouter } from "next/router";
 
 interface FormData {
   location: string;
@@ -32,6 +33,8 @@ interface FormData {
 }
 
 const AttendanceChangeForm = () => {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>({
     location: "",
     classNumber: "",
@@ -146,11 +149,7 @@ const AttendanceChangeForm = () => {
       campusName: formData.location,
       campusNumber: formData.classNumber,
     });
-    console.log({
-      ...formData,
-      campusName: formData.location,
-      campusNumber: formData.classNumber,
-    });
+    router.push("/preview2");
   };
 
   return (

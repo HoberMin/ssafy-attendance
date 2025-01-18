@@ -1,7 +1,7 @@
 // src/store/useAttendanceStore.ts
 import { create } from "zustand";
 
-interface FormData {
+export interface IFFormData {
   campusNumber: string;
   name: string;
   birthDate: string;
@@ -16,11 +16,11 @@ interface FormData {
 }
 
 interface AttendanceStore {
-  formData: FormData;
-  updateForm: (newData: Partial<FormData>) => void;
+  formData: IFFormData;
+  updateForm: (newData: Partial<IFFormData>) => void;
 }
 
-const initialFormData: FormData = {
+const initialFormData: IFFormData = {
   campusNumber: "",
   name: "",
   campusName: "",

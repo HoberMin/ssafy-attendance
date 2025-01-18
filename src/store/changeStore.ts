@@ -2,17 +2,15 @@
 import { create } from "zustand";
 
 interface FormData {
-  location: string;
-  classNumber: string;
+  campusNumber: string;
   name: string;
   birthDate: string;
-  reason: string;
+  reason: number;
+  campusName: string;
   attendanceDate: string;
   attendanceTime: string;
-  attendancePeriod: string;
   changeDate: string;
   changeTime: string;
-  changePeriod: string;
   changeReason: string;
   signatureData: string | null;
 }
@@ -23,17 +21,15 @@ interface AttendanceStore {
 }
 
 const initialFormData: FormData = {
-  location: "",
-  classNumber: "",
+  campusNumber: "",
   name: "",
+  campusName: "",
   birthDate: "",
-  reason: "입실 미클릭",
+  reason: 0,
   attendanceDate: "",
   attendanceTime: "",
-  attendancePeriod: "오전",
   changeDate: "",
   changeTime: "",
-  changePeriod: "오전",
   changeReason: "",
   signatureData: null,
 };

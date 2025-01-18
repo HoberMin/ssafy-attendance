@@ -20,15 +20,15 @@ interface FormData {
   location: string;
   classNumber: string;
   name: string;
+  campus: string;
   birthDate: string;
-  reason: string;
+  reason: number;
   attendanceDate: string;
   attendanceTime: string;
-  attendancePeriod: string;
   changeDate: string;
   changeTime: string;
-  changePeriod: string;
   changeReason: string;
+  signatureData: string | null;
 }
 
 const AttendanceChangeForm = () => {
@@ -36,25 +36,23 @@ const AttendanceChangeForm = () => {
     location: "",
     classNumber: "",
     name: "",
+    campus: "",
     birthDate: "",
-    reason: "입실 미클릭",
+    reason: 0,
     attendanceDate: "",
     attendanceTime: "",
-    attendancePeriod: "오전",
     changeDate: "",
     changeTime: "",
-    changePeriod: "오전",
     changeReason: "",
+    signatureData: null,
   });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [signatureData, setSignatureData] = useState<string | null>(null);
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
 
   const locations = ["서울", "대전", "구미", "부울경", "대구"];
   const reasons = ["입실 미클릭", "입실 오클릭", "퇴실 미클릭", "퇴실 오클릭"];
-  const periods = ["오전", "오후", "시간"];
 
   const { updateForm } = useAttendanceStore();
 
@@ -88,7 +86,6 @@ const AttendanceChangeForm = () => {
     }
   }, []);
 
-  // 서명 관련 함수들...
   const getCanvasMousePosition = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return { x: 0, y: 0 };
     const canvas = canvasRef.current;
@@ -122,7 +119,10 @@ const AttendanceChangeForm = () => {
   const stopDrawing = () => {
     if (isDrawing && canvasRef.current) {
       setIsDrawing(false);
-      setSignatureData(canvasRef.current.toDataURL());
+      setFormData((prev) => ({
+        ...prev,
+        signatureData: canvasRef.current?.toDataURL() || null,
+      }));
     }
   };
 
@@ -132,13 +132,25 @@ const AttendanceChangeForm = () => {
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      setSignatureData(null);
+      setFormData((prev) => ({
+        ...prev,
+        signatureData: null,
+      }));
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateForm(formData);
+    updateForm({
+      ...formData,
+      campusName: formData.location,
+      campusNumber: formData.classNumber,
+    });
+    console.log({
+      ...formData,
+      campusName: formData.location,
+      campusNumber: formData.classNumber,
+    });
   };
 
   return (
@@ -232,9 +244,25 @@ const AttendanceChangeForm = () => {
               id="birthDate"
               placeholder="YY.MM.DD"
               value={formData.birthDate}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, birthDate: e.target.value }))
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                // Remove any non-digit characters first
+                const numbers = value.replace(/\D/g, "");
+
+                // Add dots after every 2 digits
+                let formattedDate = "";
+                for (let i = 0; i < numbers.length && i < 6; i++) {
+                  if (i === 2 || i === 4) {
+                    formattedDate += ".";
+                  }
+                  formattedDate += numbers[i];
+                }
+
+                setFormData((prev) => ({
+                  ...prev,
+                  birthDate: formattedDate,
+                }));
+              }}
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
             />
@@ -247,16 +275,16 @@ const AttendanceChangeForm = () => {
               사유
             </Label>
             <RadioGroup
-              value={formData.reason}
+              value={formData.reason.toString()}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, reason: value }))
+                setFormData((prev) => ({ ...prev, reason: parseInt(value) }))
               }
               className="grid grid-cols-2 gap-4"
             >
-              {reasons.map((reason) => (
+              {reasons.map((reason, index) => (
                 <div key={reason} className="flex items-center">
                   <RadioGroupItem
-                    value={reason}
+                    value={index.toString()}
                     id={reason}
                     className="peer sr-only"
                   />
@@ -265,7 +293,7 @@ const AttendanceChangeForm = () => {
                     className={`flex items-center justify-center w-full px-4 py-2 rounded-lg border-2 
                              cursor-pointer text-center transition-all duration-200
                              ${
-                               formData.reason === reason
+                               formData.reason === index
                                  ? "bg-[#3396f4] text-white border-[#3396f4] shadow-md transform scale-[1.02]"
                                  : "bg-white text-gray-700 border-gray-200 hover:bg-[#3396f4]/10 hover:border-[#3396f4]/30"
                              }`}
@@ -309,35 +337,6 @@ const AttendanceChangeForm = () => {
                 required
               />
             </div>
-            <RadioGroup
-              value={formData.attendancePeriod}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, attendancePeriod: value }))
-              }
-              className="flex flex-row justify-start gap-4"
-            >
-              {periods.map((period) => (
-                <div key={period} className="flex items-center flex-1">
-                  <RadioGroupItem
-                    value={period}
-                    id={`attendance-${period}`}
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor={`attendance-${period}`}
-                    className={`flex items-center justify-center w-full px-4 py-2 rounded-lg border-2 
-                             cursor-pointer text-center transition-all duration-200
-                             ${
-                               formData.attendancePeriod === period
-                                 ? "bg-[#3396f4] text-white border-[#3396f4] shadow-md transform scale-[1.02]"
-                                 : "bg-white text-gray-700 border-gray-200 hover:bg-[#3396f4]/10 hover:border-[#3396f4]/30"
-                             }`}
-                  >
-                    {period}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
           </div>
 
           {/* 변경일시 */}
@@ -372,35 +371,6 @@ const AttendanceChangeForm = () => {
                 required
               />
             </div>
-            <RadioGroup
-              value={formData.changePeriod}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, changePeriod: value }))
-              }
-              className="flex flex-row justify-start gap-4"
-            >
-              {periods.map((period) => (
-                <div key={period} className="flex items-center flex-1">
-                  <RadioGroupItem
-                    value={period}
-                    id={`change-${period}`}
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor={`change-${period}`}
-                    className={`flex items-center justify-center w-full px-4 py-2 rounded-lg border-2 
-                             cursor-pointer text-center transition-all duration-200
-                             ${
-                               formData.changePeriod === period
-                                 ? "bg-[#3396f4] text-white border-[#3396f4] shadow-md transform scale-[1.02]"
-                                 : "bg-white text-gray-700 border-gray-200 hover:bg-[#3396f4]/10 hover:border-[#3396f4]/30"
-                             }`}
-                  >
-                    {period}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
           </div>
 
           {/* 변경사유 */}

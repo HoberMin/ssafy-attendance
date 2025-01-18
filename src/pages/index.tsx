@@ -43,7 +43,7 @@ const AttendancePage = () => {
               </button>
 
               {/* 변경요청서 탭 */}
-              {/* <button
+              <button
                 onClick={() => setActiveTab("change")}
                 className={`group relative flex-1 px-6 py-4 rounded-xl text-lg font-medium 
                          transition-all duration-300
@@ -57,7 +57,7 @@ const AttendancePage = () => {
                 {activeTab !== "change" && (
                   <span className="absolute inset-0 rounded-xl border-2 border-transparent group-hover:border-[#3396f4]/20" />
                 )}
-              </button> */}
+              </button>
             </div>
           </div>
 

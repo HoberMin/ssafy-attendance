@@ -32,6 +32,7 @@ const AttendancePreview = () => {
   const docsImageUrls = ["/소명확인서.png", "/소명확인서-별첨.png"];
 
   const A4_RATIO = 1.4142;
+  const SCALE = 1.5;
 
   // 화면 크기 변경 감지 , 캔버스 크기 조정
   useEffect(() => {
@@ -67,19 +68,19 @@ const AttendancePreview = () => {
     if (!ctx1 || !ctx2) return;
 
     // 캔버스 크기 설정
-    canvas1.width = canvasSize.width * 2;
-    canvas1.height = canvasSize.height * 2;
+    canvas1.width = canvasSize.width * SCALE;
+    canvas1.height = canvasSize.height * SCALE;
     canvas1.style.width = `${canvasSize.width}px`;
     canvas1.style.height = `${canvasSize.height}px`;
 
-    canvas2.width = canvasSize.width * 2;
-    canvas2.height = canvasSize.height * 2;
+    canvas2.width = canvasSize.width * SCALE;
+    canvas2.height = canvasSize.height * SCALE;
     canvas2.style.width = `${canvasSize.width}px`;
     canvas2.style.height = `${canvasSize.height}px`;
 
     // 컨텍스트 설정
-    ctx1.scale(2, 2);
-    ctx2.scale(2, 2);
+    ctx1.scale(SCALE, SCALE);
+    ctx2.scale(SCALE, SCALE);
 
     const fontSize = canvasSize.width * 0.02;
     const checkSize = canvas1.width * 0.018;
@@ -129,8 +130,8 @@ const AttendancePreview = () => {
         imgCheck,
         absentTimeCoord[0] * canvasSize.width,
         absentTimeCoord[1] * canvasSize.height,
-        checkSize / 2,
-        checkSize / 2
+        checkSize / SCALE,
+        checkSize / SCALE
       );
 
       // 공가, 사유 체크이미지 렌더링
@@ -139,8 +140,8 @@ const AttendancePreview = () => {
         imgCheck,
         absentCategoryCoordinate[checkedAbsentCategory][0] * canvas1.width,
         absentCategoryCoordinate[checkedAbsentCategory][1] * canvas1.height,
-        checkSize / 2,
-        checkSize / 2
+        checkSize / SCALE,
+        checkSize / SCALE
       );
 
       ctx1.font = fontStyleReason;
@@ -251,16 +252,25 @@ const AttendancePreview = () => {
     };
   }, [canvasSize, userInput, fontStyleOne, fontStyleTwo]);
 
-  const saveImg = () => {
+  const saveImg = async () => {
     if (!canvas1Ref.current || !canvas2Ref.current) return;
 
-    html2canvas(canvas1Ref.current, {
-      scale: 2,
-    }).then(() => {
-      const canvas = canvas1Ref.current;
-      if (!canvas) return;
+    const options = {
+      scale: SCALE,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+    };
 
-      const imgData = canvas.toDataURL("image/png", 1.0);
+    try {
+      const canvas1 = await html2canvas(canvas1Ref.current, options);
+      const canvas2 = await html2canvas(canvas1Ref.current, options);
+
+      if (!canvas1) return;
+      if (!canvas2) return;
+
+      const DATA_URL_SCALE = 0.8;
+      const imgData = canvas1.toDataURL("image/png", DATA_URL_SCALE);
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
       const imgHeight = 297;
@@ -268,16 +278,15 @@ const AttendancePreview = () => {
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.addPage();
 
-      const canvas2 = canvas2Ref.current;
-      if (!canvas2) return;
-
-      const imgData2 = canvas2.toDataURL("image/png", 1.0);
+      const imgData2 = canvas2.toDataURL("image/png", DATA_URL_SCALE);
 
       pdf.addImage(imgData2, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save(
         `${userInput.absentYear}${userInput.absentMonth}${userInput.absentDay}_출결확인서_${userInput.name}[${userInput.campus}_${userInput.class}반].pdf`
       );
-    });
+    } catch {
+      //
+    }
   };
 
   return (

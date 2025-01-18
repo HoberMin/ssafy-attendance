@@ -21,8 +21,8 @@ export const fontStyleTwoCoordinate: Record<string, [number, number]> = {
 
 // 공가/사유 체크박스 : [공가, 사유]
 export const absentCategoryCoordinate = [
-  [0.102, 0.201],
-  [0.102, 0.2223],
+  [0.137, 0.267],
+  [0.137, 0.297],
 ];
 
 // 공가/사유 내용 [공가, 사유]

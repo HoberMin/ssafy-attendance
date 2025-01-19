@@ -1,3 +1,6 @@
+# 싸피 출결 소명 생성기
+
+[SSAFY 출결 소명 생성기](https://ssafy-attendance.vercel.app/) - **공가/사유 확인서** 및 **출결 변경 요청서** 생성기
 <img width="1127" alt="Image" src="https://github.com/user-attachments/assets/17fdd958-eb91-4786-8a54-82a0c7af4c68" />
 
 <br/>

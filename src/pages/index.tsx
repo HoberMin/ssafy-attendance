@@ -163,6 +163,16 @@ const AttendancePage = () => {
             <div className="text-center text-sm text-gray-500">
               © 2025 HoberMin. All rights reserved.
             </div>
+            <a
+              href="https://hits.seeyoufarm.com"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                margin: " 0 0 20px",
+              }}
+            >
+              <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fssafy-attendance.vercel.app&count_bg=%233396F4&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false" />
+            </a>
           </div>
         </div>
       </footer>

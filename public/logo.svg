@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <!-- 메인 그라디언트 -->
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe"/>
+      <stop offset="100%" style="stop-color:#00f2fe"/>
+    </linearGradient>
+    
+    <!-- 배경 그라디언트 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" style="stop-color:#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    
+    <!-- 부드러운 그림자 효과 -->
+    <filter id="modernGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow"/>
+      <feBlend in="SourceGraphic" in2="glow" mode="normal"/>
+    </filter>
+  </defs>
+
+  <!-- 배경 장식 -->
+  <g opacity="0.7">
+    <circle cx="200" cy="100" r="90" fill="url(#bgGradient)"/>
+  </g>
+
+  <!-- 메인 텍스트 -->
+  <g filter="url(#modernGlow)">
+    <text x="200" y="120" 
+          text-anchor="middle" 
+          font-family="Arial, sans-serif" 
+          font-size="85" 
+          font-weight="bold"
+          fill="url(#mainGradient)"
+          style="letter-spacing: 2px;">
+      SSAFY
+    </text>
+  </g>
+
+  <!-- 장식적 요소 -->
+  <g stroke="url(#mainGradient)" stroke-width="2" opacity="0.3">
+    <path d="M160 50 L180 70" />
+    <path d="M220 50 L240 70" />
+    <path d="M160 150 L180 130" />
+    <path d="M220 150 L240 130" />
+  </g>
+
+  <!-- 부드러운 하이라이트 -->
+  <circle cx="200" cy="85" r="3" fill="#ffffff" opacity="0.6"/>
+  <circle cx="220" cy="85" r="2" fill="#ffffff" opacity="0.4"/>
+  <circle cx="180" cy="85" r="2" fill="#ffffff" opacity="0.4"/>
+</svg>

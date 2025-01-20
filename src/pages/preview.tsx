@@ -176,10 +176,13 @@ const AttendancePreview = () => {
         // 사유 선택시 내용
         renderReason(
           [
-            absentDetailReasonCoordinate[1],
             [
-              absentDetailReasonCoordinate[1][0] - 0.29,
-              absentDetailReasonCoordinate[1][1] + 0.023,
+              absentDetailReasonCoordinate[0][0] + 0.21,
+              absentDetailReasonCoordinate[0][1] + 0.043,
+            ],
+            [
+              absentDetailReasonCoordinate[1][0],
+              absentDetailReasonCoordinate[1][1] + 0.043,
             ],
           ],
           [12, 28]

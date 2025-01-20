@@ -540,7 +540,7 @@ const AbsenceForm = () => {
               aria-label="결석 사유 입력"
             >
               <FileText className="w-4 h-4 text-[#3396f4]" />
-              사유 (최대 40자)
+              사유 (최대 30자)
             </Label>
             <textarea
               id="reason"
@@ -551,10 +551,10 @@ const AbsenceForm = () => {
                        focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
               aria-required="true"
-              maxLength={40}
+              maxLength={30}
             />
             <div className="text-sm text-gray-500 text-right">
-              {formData.reason.length}/40자
+              {formData.reason.length}/30자
             </div>
           </div>
 

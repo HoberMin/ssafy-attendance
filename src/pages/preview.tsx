@@ -17,8 +17,26 @@ import { useConfirmStore } from "@/store/confirmStore";
 
 const AttendancePreview = () => {
   const router = useRouter();
-  const { formData: userInput } = useConfirmStore();
-
+  // const { formData: userInput } = useConfirmStore();
+  const userInput = {
+    name: "홍길동",
+    birthday: "1995-05-15",
+    absentYear: "25",
+    absentMonth: "01",
+    absentDay: "11",
+    absentTime: 1,
+    absentCategory: 0,
+    absentReason:
+      "병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료병원 방문\n가족 치료",
+    // 세부내용 24자 이후 줄넘김
+    absentDetail:
+      "갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉궑뷁갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉갉",
+    absentPlace: "서울 강남구",
+    signatureUrl: "/체크.png",
+    campus: "서울 캠퍼스",
+    class: "3학년 1반",
+    appendix: "/체크.png",
+  };
   const canvas1Ref = useRef<HTMLCanvasElement | null>(null);
   const canvas2Ref = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -176,10 +194,13 @@ const AttendancePreview = () => {
         // 사유 선택시 내용
         renderReason(
           [
-            absentDetailReasonCoordinate[1],
             [
-              absentDetailReasonCoordinate[1][0] - 0.29,
-              absentDetailReasonCoordinate[1][1] + 0.023,
+              absentDetailReasonCoordinate[0][0] + 0.21,
+              absentDetailReasonCoordinate[0][1] + 0.043,
+            ],
+            [
+              absentDetailReasonCoordinate[1][0],
+              absentDetailReasonCoordinate[1][1] + 0.043,
             ],
           ],
           [12, 28]

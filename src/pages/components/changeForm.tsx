@@ -321,7 +321,6 @@ const AttendanceChangeForm = () => {
                   }))
                 }
                 className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
-                required
               />
               <Input
                 type="time"
@@ -333,7 +332,6 @@ const AttendanceChangeForm = () => {
                   }))
                 }
                 className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
-                required
               />
             </div>
           </div>

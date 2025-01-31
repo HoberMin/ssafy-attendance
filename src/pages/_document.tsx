@@ -41,7 +41,7 @@ export default function Document() {
         {/* 서치콘솔 */}
         <meta
           name="google-site-verification"
-          content="5VGtlhTz9AAQ8fhJZC2vZfbHD8ka2xTfYpVVytsS0tY"
+          content="Wd9dF--sXe_IuopeBkfpOya01F0rJTctS9h0-EvdtLQ"
         />
       </Head>
       <body className="antialiased">

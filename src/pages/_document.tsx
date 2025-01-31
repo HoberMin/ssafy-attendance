@@ -37,6 +37,12 @@ export default function Document() {
         <meta name="robots" content="index, follow" />
         <meta name="author" content="hobermin" />
         <link rel="canonical" href="https://ssafy-attendance.vercel.app/" />
+
+        {/* 서치콘솔 */}
+        <meta
+          name="google-site-verification"
+          content="5VGtlhTz9AAQ8fhJZC2vZfbHD8ka2xTfYpVVytsS0tY"
+        />
       </Head>
       <body className="antialiased">
         <Main />

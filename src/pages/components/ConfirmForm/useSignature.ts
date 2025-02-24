@@ -24,6 +24,7 @@ const useSignature = ({
   const [lastPos, setLastPos] = useState<Position>({ x: 0, y: 0 });
 
   useEffect(() => {
+    // 클라이언트 사이드에서만 실행
     if (typeof window === "undefined") return;
 
     if (canvasRef.current) {
@@ -47,7 +48,8 @@ const useSignature = ({
   }, [initialSignature, width, height]);
 
   const loadSignature = (signatureUrl: string) => {
-    if (!canvasRef.current) return;
+    // 클라이언트 사이드에서만 실행
+    if (typeof window === "undefined" || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -65,6 +67,7 @@ const useSignature = ({
   const getCanvasMousePosition = (
     e: React.MouseEvent<HTMLCanvasElement>
   ): Position => {
+    // 클라이언트 사이드에서만 실행
     if (typeof window === "undefined" || !canvasRef.current)
       return { x: 0, y: 0 };
 

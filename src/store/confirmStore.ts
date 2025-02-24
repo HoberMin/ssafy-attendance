@@ -22,7 +22,7 @@ interface FormStore {
   setFormData: (data: TransformedData) => void;
 }
 
-const initialState: TransformedData = {
+export const initialState: TransformedData = {
   name: "",
   birthday: "",
   absentYear: "",

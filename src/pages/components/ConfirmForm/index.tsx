@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -17,19 +17,16 @@ import {
   FileImage,
 } from "lucide-react";
 import { useRouter } from "next/router";
-import { useConfirmStore } from "@/store/confirmStore";
+import {
+  useConfirmStore,
+  TransformedData,
+  initialState,
+} from "@/store/confirmStore";
+import { convertBase64ToFile, convertFileToBase64 } from "@/lib/utils";
+import { useSignature } from "./useSignature";
 
-interface FormData {
-  location: string;
-  absentCategory: string;
-  classNumber: string;
-  name: string;
-  birthDate: string;
+interface ExtendedTransformedData extends TransformedData {
   absenceDate: string;
-  category: string;
-  reason: string;
-  details: string;
-  place: string;
 }
 
 const AbsenceForm = () => {
@@ -37,61 +34,44 @@ const AbsenceForm = () => {
   const { formData: userInput, setFormData: setConfirmForm } =
     useConfirmStore();
 
-  // 초기값 설정 함수
-  const getInitialFormData = () => {
+  const {
+    canvasRef,
+    signatureData,
+    initializeCanvas,
+    loadSignature,
+    startDrawing,
+    draw,
+    stopDrawing,
+    clearSignature,
+  } = useSignature({ initialSignature: userInput.signatureUrl });
+
+  const getInitialFormData = (): ExtendedTransformedData => {
     if (!userInput.name) {
       return {
-        location: "",
-        classNumber: "",
-        name: "",
-        birthDate: "",
+        ...initialState,
+        absentTime: 0,
+        absentCategory: 0,
         absenceDate: "",
-        absentCategory: "공가",
-        category: "오전",
-        reason: "",
-        details: "",
-        place: "",
       };
     }
 
-    // Zustand store 데이터로부터 폼 데이터 변환
-    const [year, month, day] = userInput.birthday.split("-");
+    const absenceDate =
+      userInput.absentYear && userInput.absentMonth && userInput.absentDay
+        ? `20${userInput.absentYear}-${userInput.absentMonth}-${userInput.absentDay}`
+        : "";
+
     return {
-      location: userInput.campus,
-      classNumber: userInput.class,
-      name: userInput.name,
-      birthDate: `${year}.${month}.${day}`,
-      absenceDate: `20${userInput.absentYear}-${userInput.absentMonth.padStart(
-        2,
-        "0"
-      )}-${userInput.absentDay.padStart(2, "0")}`,
-      absentCategory: userInput.absentCategory === 0 ? "공가" : "사유",
-      category: (() => {
-        switch (userInput.absentTime) {
-          case 0:
-            return "오전";
-          case 1:
-            return "오후";
-          case 2:
-            return "종일";
-          default:
-            return "오전";
-        }
-      })(),
-      reason: userInput.absentReason,
-      details: userInput.absentDetail,
-      place: userInput.absentPlace,
+      ...userInput,
+      signatureUrl: userInput.signatureUrl || "",
+      appendix: userInput.appendix || "",
+      absenceDate,
     };
   };
 
-  const [formData, setFormData] = useState<FormData>(getInitialFormData());
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [signatureData, setSignatureData] = useState<string | null>(
-    userInput.signatureUrl || null
+  const [formData, setFormData] = useState<ExtendedTransformedData>(
+    getInitialFormData()
   );
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
 
   const locations = ["서울", "대전", "구미", "부울경", "광주"];
 
@@ -100,209 +80,99 @@ const AbsenceForm = () => {
   ) => {
     const { name, value } = e.target;
 
-    if (name === "name" && value.length > 5) {
+    if (name === "name") {
+      if (value.length > 5) return;
+
+      if (!/^[ㄱ-ㅎㅏ-ㅣ가-힣]*$/.test(value)) return;
+
+      setFormData((prev) => ({ ...prev, name: value }));
       return;
     }
 
-    if (name === "birthDate") {
-      // Remove any non-digit characters first
-      const numbers = value.replace(/\D/g, "");
-
-      // Add dots after every 2 digits
-      let formattedDate = "";
-      for (let i = 0; i < numbers.length && i < 6; i++) {
-        if (i === 2 || i === 4) {
-          formattedDate += ".";
-        }
-        formattedDate += numbers[i];
+    if (name === "class") {
+      const numValue = value.replace(/\D/g, "");
+      const num = parseInt(numValue);
+      if (numValue === "" || (num >= 1 && num <= 23)) {
+        setFormData((prev) => ({ ...prev, class: numValue }));
       }
-
-      setFormData((prev) => ({
-        ...prev,
-        [name]: formattedDate,
-      }));
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "birthday") {
+      const numbers = value.replace(/\D/g, "");
+      const formattedDate = numbers
+        .slice(0, 6)
+        .split("")
+        .reduce((acc, digit, i) => {
+          if (i === 2 || i === 4) return `${acc}-${digit}`;
+          return acc + digit;
+        }, "");
+
+      setFormData((prev) => ({ ...prev, birthday: formattedDate }));
+      return;
+    }
+
+    if (name === "absentPlace") {
+      const trimmed = value.trim();
+      if (trimmed.length <= 30) {
+        setFormData((prev) => ({ ...prev, absentPlace: trimmed }));
+      }
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    const maxLength = name === "reason" ? 40 : 80;
+    const maxLength = name === "absentReason" ? 30 : 120;
+    const trimmed = value.trim();
 
-    if (value.length <= maxLength) {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+    if (trimmed.length <= maxLength) {
+      setFormData((prev) => ({ ...prev, [name]: trimmed }));
     }
   };
 
   useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        canvas.width = 250;
-        canvas.height = 150;
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1.5;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-      }
-    }
+    initializeCanvas();
   }, []);
 
-  // 서명 이미지 초기 로드
   useEffect(() => {
-    if (canvasRef.current && userInput.signatureUrl) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = userInput.signatureUrl;
-      }
+    if (userInput.signatureUrl) {
+      loadSignature(userInput.signatureUrl);
     }
   }, [userInput.signatureUrl]);
 
-  // 증빙서류 이미지 초기 로드
   useEffect(() => {
     if (userInput.appendix) {
-      const convertBase64ToFile = async (base64String: string) => {
-        const response = await fetch(base64String);
-        const blob = await response.blob();
-        return new File([blob], "appendix.png", { type: "image/png" });
-      };
-
       convertBase64ToFile(userInput.appendix)
-        .then((file) => setDocumentFile(file))
+        .then(setDocumentFile)
         .catch((error) =>
           console.error("Error converting base64 to file:", error)
         );
     }
   }, [userInput.appendix]);
 
-  const getCanvasMousePosition = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
-  };
-
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
-    const pos = getCanvasMousePosition(e);
-    setLastPos(pos);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !canvasRef.current) return;
-
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-
-    const currentPos = getCanvasMousePosition(e);
-
-    ctx.beginPath();
-    ctx.moveTo(lastPos.x, lastPos.y);
-    ctx.lineTo(currentPos.x, currentPos.y);
-    ctx.stroke();
-
-    setLastPos(currentPos);
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    if (canvasRef.current) {
-      setSignatureData(canvasRef.current.toDataURL());
-    }
-  };
-
-  const clearSignature = () => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      setSignatureData(null);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const convertFileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    };
-
-    const [absenceYear, absenceMonth, absenceDay] = formData.absenceDate
-      .split("-")
-      .map(String);
-
-    const getAbsentTime = (category: string): number => {
-      switch (category) {
-        case "오전":
-          return 0;
-        case "오후":
-          return 1;
-        case "종일":
-          return 2;
-        default:
-          return 0;
-      }
-    };
-
-    const getAbsentCategory = (category: string): number => {
-      switch (category) {
-        case "공가":
-          return 0;
-        case "사유":
-          return 1;
-        default:
-          return 0;
-      }
-    };
-
     try {
-      let fileBase64 = "";
-      if (documentFile) {
-        fileBase64 = await convertFileToBase64(documentFile);
-      }
+      const fileBase64 = documentFile
+        ? await convertFileToBase64(documentFile)
+        : "";
 
-      const transformedData = {
-        name: formData.name,
-        birthday: formData.birthDate.replace(/\./g, "-"),
-        absentYear: absenceYear.slice(2, 4),
-        absentMonth: absenceMonth,
-        absentDay: absenceDay,
-        absentTime: getAbsentTime(formData.category),
-        absentCategory: getAbsentCategory(formData.absentCategory),
-        absentReason: formData.reason.replaceAll("\n", " "),
-        absentDetail: formData.details.replaceAll("\n", " "),
-        absentPlace: formData.place,
+      // 날짜를 분리
+      const date = new Date(formData.absenceDate);
+      const year = date.getFullYear().toString().slice(2); // YY
+      const month = (date.getMonth() + 1).toString().padStart(2, "0"); // MM
+      const day = date.getDate().toString().padStart(2, "0"); // DD
+
+      const transformedData: TransformedData = {
+        ...formData,
+        absentYear: year,
+        absentMonth: month,
+        absentDay: day,
         signatureUrl: signatureData || "",
-        campus: `${formData.location}`,
-        class: formData.classNumber,
         appendix: fileBase64,
       };
 
@@ -320,21 +190,19 @@ const AbsenceForm = () => {
           {/* 지역 선택 */}
           <div className="space-y-2">
             <Label
-              htmlFor="location"
+              htmlFor="campus"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="지역 선택"
             >
               <MapPin className="w-4 h-4 text-[#3396f4]" />
               지역
             </Label>
             <select
-              id="location"
-              name="location"
-              value={formData.location}
+              id="campus"
+              name="campus"
+              value={formData.campus}
               onChange={handleInputChange}
               className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
-              aria-required="true"
             >
               <option value="">선택하세요</option>
               {locations.map((loc) => (
@@ -348,20 +216,18 @@ const AbsenceForm = () => {
           {/* 반 번호 */}
           <div className="space-y-2">
             <Label
-              htmlFor="classNumber"
+              htmlFor="class"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="반 번호 입력"
             >
               <Users className="w-4 h-4 text-[#3396f4]" />반
             </Label>
             <Input
               type="number"
-              id="classNumber"
-              name="classNumber"
-              value={formData.classNumber}
+              id="class"
+              name="class"
+              value={formData.class}
               onChange={handleInputChange}
               required
-              aria-required="true"
               min={1}
               max={23}
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
@@ -373,7 +239,6 @@ const AbsenceForm = () => {
             <Label
               htmlFor="name"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="성명 입력"
             >
               <User className="w-4 h-4 text-[#3396f4]" />
               성명
@@ -382,12 +247,11 @@ const AbsenceForm = () => {
               type="text"
               id="name"
               name="name"
-              minLength={2}
-              maxLength={5}
               value={formData.name}
               onChange={handleInputChange}
               required
-              aria-required="true"
+              minLength={2}
+              maxLength={5}
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
           </div>
@@ -395,31 +259,29 @@ const AbsenceForm = () => {
           {/* 생년월일 */}
           <div className="space-y-2">
             <Label
-              htmlFor="birthDate"
+              htmlFor="birthday"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="생년월일 입력"
             >
               <Calendar className="w-4 h-4 text-[#3396f4]" />
               생년월일
             </Label>
             <Input
               type="text"
-              id="birthDate"
-              name="birthDate"
-              placeholder="YY.MM.DD"
-              value={formData.birthDate}
+              id="birthday"
+              name="birthday"
+              placeholder="YY-MM-DD"
+              value={formData.birthday}
               onChange={handleInputChange}
               required
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
           </div>
 
-          {/* 결석일시 */}
+          {/* 결석일시 변경 */}
           <div className="space-y-2">
             <Label
               htmlFor="absenceDate"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="결석일시 선택"
             >
               <Calendar className="w-4 h-4 text-[#3396f4]" />
               결석일시
@@ -430,8 +292,6 @@ const AbsenceForm = () => {
               name="absenceDate"
               value={formData.absenceDate}
               onChange={handleInputChange}
-              min="1900-01-01"
-              max="2099-12-31"
               required
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
@@ -440,18 +300,17 @@ const AbsenceForm = () => {
           {/* 장소 */}
           <div className="space-y-2">
             <Label
-              htmlFor="place"
+              htmlFor="absentPlace"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="장소 입력"
             >
               <Building className="w-4 h-4 text-[#3396f4]" />
               장소
             </Label>
             <Input
               type="text"
-              id="place"
-              name="place"
-              value={formData.place}
+              id="absentPlace"
+              name="absentPlace"
+              value={formData.absentPlace}
               onChange={handleInputChange}
               required
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
@@ -465,131 +324,134 @@ const AbsenceForm = () => {
               분류
             </Label>
             <RadioGroup
-              value={formData.category}
+              value={String(formData.absentTime)}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, category: value }))
+                setFormData((prev) => ({ ...prev, absentTime: Number(value) }))
               }
               className="flex flex-row justify-start gap-6"
-              aria-label="결석 분류 선택"
             >
-              {["오전", "오후", "종일"].map((category) => (
-                <div key={category} className="flex items-center flex-1">
+              {[
+                { value: "0", label: "오전" },
+                { value: "1", label: "오후" },
+                { value: "2", label: "종일" },
+              ].map(({ value, label }) => (
+                <div key={value} className="flex items-center flex-1">
                   <RadioGroupItem
-                    value={category}
-                    id={category}
+                    value={value}
+                    id={value}
                     className="peer sr-only"
                   />
                   <Label
-                    htmlFor={category}
+                    htmlFor={value}
                     className={`flex items-center justify-center w-full px-4 py-2 rounded-lg border-2
                      cursor-pointer text-center transition-all duration-200
                      ${
-                       formData.category === category
+                       String(formData.absentTime) === value
                          ? "bg-[#3396f4] text-white border-[#3396f4] shadow-md transform scale-[1.02]"
                          : "bg-white text-gray-700 border-gray-200 hover:bg-[#3396f4]/10 hover:border-[#3396f4]/30"
                      }`}
                   >
-                    {category}
+                    {label}
                   </Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
 
+          {/* 공가사유 */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Clock className="w-4 h-4 text-[#3396f4]" />
               공가사유
             </Label>
             <RadioGroup
-              value={formData.absentCategory}
+              value={String(formData.absentCategory)}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, absentCategory: value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  absentCategory: Number(value),
+                }))
               }
               className="flex justify-start gap-6"
-              aria-label="결석 분류 선택"
             >
-              {["공가", "사유"].map((category) => (
-                <div key={category} className="flex items-center">
+              {[
+                { value: "0", label: "공가" },
+                { value: "1", label: "사유" },
+              ].map(({ value, label }) => (
+                <div key={value} className="flex items-center">
                   <RadioGroupItem
-                    value={category}
-                    id={category}
+                    value={value}
+                    id={`category-${value}`}
                     className="peer sr-only"
                   />
                   <Label
-                    htmlFor={category}
+                    htmlFor={`category-${value}`}
                     className={`flex items-center justify-center w-full px-4 py-2 rounded-lg border-2
                      cursor-pointer text-center transition-all duration-200
                      ${
-                       formData.absentCategory === category
+                       String(formData.absentCategory) === value
                          ? "bg-[#3396f4] text-white border-[#3396f4] shadow-md transform scale-[1.02]"
                          : "bg-white text-gray-700 border-gray-200 hover:bg-[#3396f4]/10 hover:border-[#3396f4]/30"
                      }`}
                   >
-                    {category}
+                    {label}
                   </Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
 
+          {/* 사유 */}
           <div className="space-y-2">
             <Label
-              htmlFor="reason"
+              htmlFor="absentReason"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="결석 사유 입력"
             >
               <FileText className="w-4 h-4 text-[#3396f4]" />
               사유 (최대 30자)
             </Label>
             <textarea
-              id="reason"
-              name="reason"
-              value={formData.reason}
+              id="absentReason"
+              name="absentReason"
+              value={formData.absentReason}
               onChange={handleTextareaChange}
               className="w-full p-2 border rounded-md min-h-[80px] resize-none 
                        focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
-              aria-required="true"
               maxLength={30}
             />
             <div className="text-sm text-gray-500 text-right">
-              {formData.reason.length}/30자
+              {formData.absentReason.length}/30자
             </div>
           </div>
 
           {/* 세부내용 */}
           <div className="space-y-2">
             <Label
-              htmlFor="details"
+              htmlFor="absentDetail"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="세부내용 입력"
             >
               <MessageSquare className="w-4 h-4 text-[#3396f4]" />
-              세부내용 (최대 80자)
+              세부내용 (최대 120자)
             </Label>
             <textarea
-              id="details"
-              name="details"
-              value={formData.details}
+              id="absentDetail"
+              name="absentDetail"
+              value={formData.absentDetail}
               onChange={handleTextareaChange}
               className="w-full p-2 border rounded-md min-h-[120px] resize-none 
-                       focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
+                      focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
-              aria-required="true"
-              maxLength={80}
+              maxLength={120}
             />
             <div className="text-sm text-gray-500 text-right">
-              {formData.details.length}/80자
+              {formData.absentDetail.length}/120자
             </div>
           </div>
 
           {/* 서명 부분 */}
           <div className="space-y-2">
-            <Label
-              className="flex items-center gap-2 text-sm font-medium"
-              aria-label="서명 입력"
-            >
+            <Label className="flex items-center gap-2 text-sm font-medium">
               <Pen className="w-4 h-4 text-[#3396f4]" />
               서명
             </Label>
@@ -602,7 +464,6 @@ const AbsenceForm = () => {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseOut={stopDrawing}
-                aria-label="서명 캔버스"
               />
               <Button
                 type="button"
@@ -620,30 +481,53 @@ const AbsenceForm = () => {
             <Label
               htmlFor="document"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="증빙서류 업로드"
             >
               <FileImage className="w-4 h-4 text-[#3396f4]" />
               증빙서류
             </Label>
-            <Input
-              type="file"
-              id="document"
-              accept="image/*"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (e.target.files && e.target.files[0]) {
-                  setDocumentFile(e.target.files[0]);
-                }
-              }}
-              required
-              aria-required="true"
-              className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
-            />
+            <div className="space-y-2">
+              <Input
+                type="file"
+                id="document"
+                accept="image/*"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setDocumentFile(e.target.files[0]);
+                  }
+                }}
+                required={!documentFile}
+                className="hidden"
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  onClick={() => document.getElementById("document")?.click()}
+                  variant="outline"
+                  className="bg-white hover:bg-gray-50"
+                >
+                  <FileImage className="w-4 h-4 mr-2" />
+                  파일 등록
+                </Button>
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  {documentFile ? (
+                    <>
+                      <FileImage className="w-4 h-4" />
+                      {documentFile.name === "appendix.png"
+                        ? "출결증명 서류"
+                        : documentFile.name}
+                    </>
+                  ) : (
+                    "증명서류를 등록해야합니다"
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           <Button
             type="submit"
             className="w-full mt-[20px] bg-[#3396f4] hover:bg-[#3396f4]/80 text-white py-2 rounded-lg 
-                     transition-colors duration-200 focus:ring-2 focus:ring-[#3396f4] focus:ring-offset-2"
+                   transition-colors duration-200 focus:ring-2 focus:ring-[#3396f4] focus:ring-offset-2"
           >
             양식 미리보기
           </Button>

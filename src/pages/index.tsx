@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import AbsenceForm from "./components/confirmForm";
 import AttendanceChangeForm from "./components/changeForm";
 import { Github, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import AbsenceForm from "./components/ConfirmForm/index";
 
 const AttendancePage = () => {
   const [activeTab, setActiveTab] = useState("absence");

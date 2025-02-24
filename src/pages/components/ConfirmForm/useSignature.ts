@@ -11,7 +11,7 @@ interface UseSignatureProps {
   height?: number;
 }
 
-export const useSignature = ({
+const useSignature = ({
   initialSignature,
   width = 250,
   height = 150,
@@ -119,3 +119,5 @@ export const useSignature = ({
     clearSignature,
   };
 };
+
+export default useSignature;

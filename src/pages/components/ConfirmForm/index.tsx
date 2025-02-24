@@ -23,7 +23,7 @@ import {
   initialState,
 } from "@/store/confirmStore";
 import { convertBase64ToFile, convertFileToBase64 } from "@/lib/utils";
-import { useSignature } from "./useSignature";
+import useSignature from "./useSignature";
 
 interface ExtendedTransformedData extends TransformedData {
   absenceDate: string;

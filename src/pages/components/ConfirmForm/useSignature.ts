@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Position {
   x: number;
@@ -55,7 +55,8 @@ const useSignature = ({
   const getCanvasMousePosition = (
     e: React.MouseEvent<HTMLCanvasElement>
   ): Position => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
+    if (typeof window === "undefined" || !canvasRef.current)
+      return { x: 0, y: 0 };
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();

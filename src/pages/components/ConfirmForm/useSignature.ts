@@ -23,20 +23,28 @@ const useSignature = ({
   );
   const [lastPos, setLastPos] = useState<Position>({ x: 0, y: 0 });
 
-  const initializeCanvas = () => {
-    if (!canvasRef.current) return;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      canvas.width = width;
-      canvas.height = height;
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        canvas.width = width;
+        canvas.height = height;
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+      }
+
+      // 초기 서명 로드
+      if (initialSignature) {
+        loadSignature(initialSignature);
+      }
     }
-  };
+  }, [initialSignature, width, height]);
 
   const loadSignature = (signatureUrl: string) => {
     if (!canvasRef.current) return;
@@ -46,7 +54,9 @@ const useSignature = ({
     if (ctx) {
       const img = new Image();
       img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setSignatureData(signatureUrl);
       };
       img.src = signatureUrl;
     }
@@ -71,8 +81,7 @@ const useSignature = ({
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDrawing(true);
-    const pos = getCanvasMousePosition(e);
-    setLastPos(pos);
+    setLastPos(getCanvasMousePosition(e));
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -112,12 +121,11 @@ const useSignature = ({
   return {
     canvasRef,
     signatureData,
-    initializeCanvas,
-    loadSignature,
     startDrawing,
     draw,
     stopDrawing,
     clearSignature,
+    loadSignature,
   };
 };
 

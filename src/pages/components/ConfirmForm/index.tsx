@@ -37,12 +37,11 @@ const AbsenceForm = () => {
   const {
     canvasRef,
     signatureData,
-    initializeCanvas,
-    loadSignature,
     startDrawing,
     draw,
     stopDrawing,
     clearSignature,
+    loadSignature,
   } = useSignature({ initialSignature: userInput.signatureUrl });
 
   const getInitialFormData = (): ExtendedTransformedData => {
@@ -132,10 +131,6 @@ const AbsenceForm = () => {
       setFormData((prev) => ({ ...prev, [name]: trimmed }));
     }
   };
-
-  useEffect(() => {
-    initializeCanvas();
-  }, []);
 
   useEffect(() => {
     if (userInput.signatureUrl) {

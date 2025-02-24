@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,14 @@ import {
   initialState,
 } from "@/store/confirmStore";
 import { convertBase64ToFile, convertFileToBase64 } from "@/lib/utils";
-import useSignature from "./useSignature";
 
 interface ExtendedTransformedData extends TransformedData {
   absenceDate: string;
+}
+
+interface Position {
+  x: number;
+  y: number;
 }
 
 const AbsenceForm = () => {
@@ -34,15 +38,111 @@ const AbsenceForm = () => {
   const { formData: userInput, setFormData: setConfirmForm } =
     useConfirmStore();
 
-  const {
-    canvasRef,
-    signatureData,
-    startDrawing,
-    draw,
-    stopDrawing,
-    clearSignature,
-    loadSignature,
-  } = useSignature({ initialSignature: userInput.signatureUrl });
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureData, setSignatureData] = useState<string | null>(
+    userInput.signatureUrl || null
+  );
+  const [lastPos, setLastPos] = useState<Position>({ x: 0, y: 0 });
+
+  // 캔버스 초기화 및 서명 로드 로직
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    if (ctx) {
+      canvas.width = 250; // 고정된 width
+      canvas.height = 150; // 고정된 height
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+    }
+
+    // 초기 서명 로드
+    if (userInput.signatureUrl) {
+      loadSignature(userInput.signatureUrl);
+    }
+  }, [userInput.signatureUrl]);
+
+  // 서명 로드 함수
+  const loadSignature = useCallback((signatureUrl: string) => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setSignatureData(signatureUrl);
+      };
+      img.src = signatureUrl;
+    }
+  }, []);
+
+  // 캔버스 마우스 위치 계산
+  const getCanvasMousePosition = (
+    e: React.MouseEvent<HTMLCanvasElement>
+  ): Position => {
+    if (!canvasRef.current) return { x: 0, y: 0 };
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  // 그리기 시작
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true);
+    setLastPos(getCanvasMousePosition(e));
+  };
+
+  // 그리기
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !canvasRef.current) return;
+
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+
+    const currentPos = getCanvasMousePosition(e);
+
+    ctx.beginPath();
+    ctx.moveTo(lastPos.x, lastPos.y);
+    ctx.lineTo(currentPos.x, currentPos.y);
+    ctx.stroke();
+
+    setLastPos(currentPos);
+  };
+
+  // 그리기 종료
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    if (canvasRef.current) {
+      setSignatureData(canvasRef.current.toDataURL());
+    }
+  };
+
+  // 서명 지우기
+  const clearSignature = () => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setSignatureData(null);
+    }
+  };
 
   const getInitialFormData = (): ExtendedTransformedData => {
     if (!userInput.name) {
@@ -321,7 +421,10 @@ const AbsenceForm = () => {
             <RadioGroup
               value={String(formData.absentTime)}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, absentTime: Number(value) }))
+                setFormData((prev) => ({
+                  ...prev,
+                  absentTime: Number(value),
+                }))
               }
               className="flex flex-row justify-start gap-6"
             >

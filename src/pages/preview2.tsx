@@ -27,12 +27,11 @@ const AttendancePreview = () => {
     attendanceTimeMinute: userInput.attendanceTime.slice(3, 5),
     changeDateYear: userInput.changeDate.slice(2, 4),
     changeDateMonth: userInput.changeDate.slice(5, 7),
-    changeDateDay: userInput.attendanceDate.slice(8, 10),
+    changeDateDay: userInput.changeDate.slice(8, 10),
     changeTimeHour: userInput.changeTime.slice(0, 2),
     changeTimeMinute: userInput.changeTime.slice(3, 5),
     requestName: userInput.name,
   };
-  console.log(parsedUserInput);
 
   const canvas1Ref = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);

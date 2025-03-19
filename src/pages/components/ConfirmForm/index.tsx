@@ -212,9 +212,8 @@ const AbsenceForm = () => {
     }
 
     if (name === "absentPlace") {
-      const trimmed = value.trim();
-      if (trimmed.length <= 30) {
-        setFormData((prev) => ({ ...prev, absentPlace: trimmed }));
+      if (value.length <= 30) {
+        setFormData((prev) => ({ ...prev, absentPlace: value }));
       }
       return;
     }
@@ -225,10 +224,9 @@ const AbsenceForm = () => {
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const maxLength = name === "absentReason" ? 30 : 120;
-    const trimmed = value.trim();
 
-    if (trimmed.length <= maxLength) {
-      setFormData((prev) => ({ ...prev, [name]: trimmed }));
+    if (value.length <= maxLength) {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 

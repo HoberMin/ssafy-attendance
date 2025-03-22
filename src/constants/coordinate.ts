@@ -6,8 +6,8 @@ export const fontStyleOneCoordinate: Record<string, [number, number]> = {
   absentMonth: [0.444, 0.273],
   absentDay: [0.52, 0.273],
 
-  absentDetailCoordinate: [0.35, 0.55], // 세부내용
-  absentPlace: [0.32, 0.647], // 장소
+  absentDetailCoordinate: [0.34, 0.545], // 세부내용
+  absentPlace: [0.32, 0.65], // 장소
   absentName: [0.32, 0.68], // 서명 이름
   signature: [0.8, 0.64], // 서명 사인
 };

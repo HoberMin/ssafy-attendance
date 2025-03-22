@@ -25,7 +25,6 @@ const AttendancePreview = () => {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const currentDate = getCurrentDate();
-
   const docsImageUrls = ["/소명확인서.png", "/소명확인서-별첨.png"];
 
   const A4_RATIO = 1.4142;
@@ -196,7 +195,7 @@ const AttendancePreview = () => {
         lineHeight: number,
         maxLength: number
       ) => {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
           const lineText = text.slice(i * maxLength, (i + 1) * maxLength);
           if (lineText) {
             ctx1.fillText(
@@ -211,7 +210,7 @@ const AttendancePreview = () => {
         userInput.absentDetail,
         fontStyleOneCoordinate.absentDetailCoordinate,
         0.02,
-        20
+        24
       );
 
       // 서명 이미지

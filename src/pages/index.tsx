@@ -16,7 +16,6 @@ const AttendancePage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      {/* 헤더 */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-center h-24 py-6">
@@ -42,9 +41,7 @@ const AttendancePage = () => {
                       <span className="text-sm font-medium">Issue</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Issue 생성하기</p>
-                  </TooltipContent>
+                  <TooltipContent>Issue 생성하기</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>

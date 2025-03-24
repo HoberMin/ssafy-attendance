@@ -23,6 +23,7 @@ import {
   initialState,
 } from "@/store/confirmStore";
 import { convertBase64ToFile, convertFileToBase64 } from "@/lib/utils";
+import SignatureCanvas from "./SignatureCanvas";
 
 interface ExtendedTransformedData extends TransformedData {
   absenceDate: string;
@@ -38,111 +39,9 @@ const AbsenceForm = () => {
   const { formData: userInput, setFormData: setConfirmForm } =
     useConfirmStore();
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(
     userInput.signatureUrl || null
   );
-  const [lastPos, setLastPos] = useState<Position>({ x: 0, y: 0 });
-
-  // 캔버스 초기화 및 서명 로드 로직
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    if (ctx) {
-      canvas.width = 250; // 고정된 width
-      canvas.height = 150; // 고정된 height
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-    }
-
-    // 초기 서명 로드
-    if (userInput.signatureUrl) {
-      loadSignature(userInput.signatureUrl);
-    }
-  }, [userInput.signatureUrl]);
-
-  // 서명 로드 함수
-  const loadSignature = useCallback((signatureUrl: string) => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        setSignatureData(signatureUrl);
-      };
-      img.src = signatureUrl;
-    }
-  }, []);
-
-  // 캔버스 마우스 위치 계산
-  const getCanvasMousePosition = (
-    e: React.MouseEvent<HTMLCanvasElement>
-  ): Position => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
-  };
-
-  // 그리기 시작
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
-    setLastPos(getCanvasMousePosition(e));
-  };
-
-  // 그리기
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !canvasRef.current) return;
-
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-
-    const currentPos = getCanvasMousePosition(e);
-
-    ctx.beginPath();
-    ctx.moveTo(lastPos.x, lastPos.y);
-    ctx.lineTo(currentPos.x, currentPos.y);
-    ctx.stroke();
-
-    setLastPos(currentPos);
-  };
-
-  // 그리기 종료
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    if (canvasRef.current) {
-      setSignatureData(canvasRef.current.toDataURL());
-    }
-  };
-
-  // 서명 지우기
-  const clearSignature = () => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      setSignatureData(null);
-    }
-  };
 
   const getInitialFormData = (): ExtendedTransformedData => {
     if (!userInput.name) {
@@ -229,12 +128,6 @@ const AbsenceForm = () => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-
-  useEffect(() => {
-    if (userInput.signatureUrl) {
-      loadSignature(userInput.signatureUrl);
-    }
-  }, [userInput.signatureUrl]);
 
   useEffect(() => {
     if (userInput.appendix) {
@@ -545,31 +438,17 @@ const AbsenceForm = () => {
             </div>
           </div>
 
-          {/* 서명 부분 */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Pen className="w-4 h-4 text-[#3396f4]" />
               서명
             </Label>
-            <div className="inline-block border rounded-md p-2 bg-white">
-              <canvas
-                ref={canvasRef}
-                className="border rounded cursor-crosshair touch-none"
-                style={{ width: "250px", height: "150px" }}
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseOut={stopDrawing}
-              />
-              <Button
-                type="button"
-                onClick={clearSignature}
-                className="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
-                variant="outline"
-              >
-                서명 지우기
-              </Button>
-            </div>
+            <SignatureCanvas
+              initialSignature={userInput.signatureUrl || null}
+              onSignatureChange={setSignatureData}
+              width={250}
+              height={150}
+            />
           </div>
 
           {/* 증빙서류 */}

@@ -44,7 +44,6 @@ const AttendancePreview = () => {
   const A4_RATIO = 1.4142;
   const SCALE = 1.5;
 
-  // 화면 크기 변경 감지 , 캔버스 크기 조정
   useEffect(() => {
     if (!userInput.name) {
       router.replace("/");

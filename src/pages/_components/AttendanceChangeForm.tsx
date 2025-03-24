@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import useAttendanceStore from "@/store/changeStore";
 import { useRouter } from "next/router";
+import SignatureCanvas from "./SignatureCanvas";
 
 interface FormData {
   location: string;
@@ -50,96 +51,16 @@ const AttendanceChangeForm = () => {
     signatureData: null,
   });
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
-
   const locations = ["서울", "대전", "구미", "부울경", "대구"];
   const reasons = ["입실 미클릭", "입실 오클릭", "퇴실 미클릭", "퇴실 오클릭"];
 
   const { updateForm } = useAttendanceStore();
 
-  useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.strokeStyle = "#000";
-        ctx.lineWidth = 2;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        const resizeCanvas = () => {
-          const container = canvas.parentElement;
-          if (container) {
-            const rect = container.getBoundingClientRect();
-            canvas.width = rect.width - 20;
-            canvas.height = 200;
-            ctx.strokeStyle = "#000";
-            ctx.lineWidth = 2;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-          }
-        };
-
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-        return () => window.removeEventListener("resize", resizeCanvas);
-      }
-    }
-  }, []);
-
-  const getCanvasMousePosition = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current) return { x: 0, y: 0 };
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
-  };
-
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true);
-    const pos = getCanvasMousePosition(e);
-    setLastPos(pos);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-    const currentPos = getCanvasMousePosition(e);
-    ctx.beginPath();
-    ctx.moveTo(lastPos.x, lastPos.y);
-    ctx.lineTo(currentPos.x, currentPos.y);
-    ctx.stroke();
-    setLastPos(currentPos);
-  };
-
-  const stopDrawing = () => {
-    if (isDrawing && canvasRef.current) {
-      setIsDrawing(false);
-      setFormData((prev) => ({
-        ...prev,
-        signatureData: canvasRef.current?.toDataURL() || null,
-      }));
-    }
-  };
-
-  const clearSignature = () => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      setFormData((prev) => ({
-        ...prev,
-        signatureData: null,
-      }));
-    }
+  const handleSignatureChange = (signatureData: string | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      signatureData: signatureData,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -245,10 +166,8 @@ const AttendanceChangeForm = () => {
               value={formData.birthDate}
               onChange={(e) => {
                 const value = e.target.value;
-                // Remove any non-digit characters first
                 const numbers = value.replace(/\D/g, "");
 
-                // Add dots after every 2 digits
                 let formattedDate = "";
                 for (let i = 0; i < numbers.length && i < 6; i++) {
                   if (i === 2 || i === 4) {
@@ -267,7 +186,6 @@ const AttendanceChangeForm = () => {
             />
           </div>
 
-          {/* 사유 */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <ClipboardEdit className="w-4 h-4 text-[#3396f4]" />
@@ -304,7 +222,6 @@ const AttendanceChangeForm = () => {
             </RadioGroup>
           </div>
 
-          {/* 출결일시 */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Calendar className="w-4 h-4 text-[#3396f4]" />
@@ -336,7 +253,6 @@ const AttendanceChangeForm = () => {
             </div>
           </div>
 
-          {/* 변경일시 */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Clock className="w-4 h-4 text-[#3396f4]" />
@@ -370,7 +286,6 @@ const AttendanceChangeForm = () => {
             </div>
           </div>
 
-          {/* 변경사유 */}
           <div className="space-y-2">
             <Label
               htmlFor="changeReason"
@@ -400,7 +315,6 @@ const AttendanceChangeForm = () => {
             </div>
           </div>
 
-          {/* 서명 */}
           <div className="space-y-2">
             <Label
               className="flex items-center gap-2 text-sm font-medium"
@@ -409,29 +323,14 @@ const AttendanceChangeForm = () => {
               <Pen className="w-4 h-4 text-[#3396f4]" />
               서명
             </Label>
-            <div className="inline-block border rounded-md p-2 bg-white">
-              <canvas
-                ref={canvasRef}
-                className="border rounded cursor-crosshair w-full touch-none"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseOut={stopDrawing}
-                style={{ width: "250px", height: "150px" }}
-                aria-label="서명 캔버스"
-              />
-              <Button
-                type="button"
-                onClick={clearSignature}
-                className="mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700"
-                variant="outline"
-              >
-                서명 지우기
-              </Button>
-            </div>
+            <SignatureCanvas
+              initialSignature={formData.signatureData}
+              onSignatureChange={handleSignatureChange}
+              width={250}
+              height={150}
+            />
           </div>
 
-          {/* 제출 버튼 */}
           <Button
             type="submit"
             className="w-full bg-[#3396f4] hover:bg-[#3396f4]/80 text-white py-2 rounded-lg 

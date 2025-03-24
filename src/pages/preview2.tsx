@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentDate } from "@/utils/getCurrentDate";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Download } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -38,9 +38,7 @@ const AttendancePreview = () => {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const currentDate = getCurrentDate();
-
   const docsImageUrl = "/출결변경요청서.png";
-
   const A4_RATIO = 1.4142;
   const SCALE = 1.5;
 
@@ -74,15 +72,12 @@ const AttendancePreview = () => {
     const ctx1 = canvas1.getContext("2d");
     if (!ctx1) return;
 
-    // 캔버스 크기 설정
     canvas1.width = canvasSize.width * SCALE;
     canvas1.height = canvasSize.height * SCALE;
     canvas1.style.width = `${canvasSize.width}px`;
     canvas1.style.height = `${canvasSize.height}px`;
 
-    // 컨텍스트 설정
     ctx1.scale(SCALE, SCALE);
-
     const fontSize = canvasSize.width * 0.02;
     const checkSize = canvas1.width * 0.018;
 
@@ -169,7 +164,6 @@ const AttendancePreview = () => {
       if (!canvas1) return;
 
       const DATA_URL_SCALE = 0.8;
-
       const imgData = canvas1.toDataURL("image/jpeg", DATA_URL_SCALE);
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
@@ -177,10 +171,8 @@ const AttendancePreview = () => {
 
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight, "", "FAST");
       pdf.save(
-        `${parsedUserInput.changeDateYear}${parsedUserInput.changeDateMonth}${parsedUserInput.changeDateDay}_출결변경요청서_${userInput.name}[${userInput.campusName}_${userInput.campusNumber}반].pdf`
+        `${parsedUserInput.changeDateYear}${parsedUserInput.changeDateMonth}${parsedUserInput.changeDateDay}_출결변경요청서_${userInput.name}[${userInput.campus}_${userInput.classNumber}반].pdf`
       );
-
-      console.log(parsedUserInput);
     } catch {
       //
     }
@@ -189,7 +181,14 @@ const AttendancePreview = () => {
   return (
     <Card className="w-full max-w-4xl mx-auto bg-white shadow-lg overflow-hidden rounded-none">
       <CardContent className="p-6 space-y-6">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 gap-2">
+          <Button
+            onClick={() => router.push("/?tab=change")}
+            className="bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-2"
+          >
+            <Pencil className="w-4 h-4" />
+            수정하기
+          </Button>
           <Button
             onClick={saveImg}
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"

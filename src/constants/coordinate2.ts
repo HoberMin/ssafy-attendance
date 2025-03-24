@@ -1,6 +1,6 @@
 export const TEXT_COORD: Record<string, [number, number]> = {
-  campusName: [0.333, 0.282],
-  campusNumber: [0.56, 0.282],
+  campus: [0.333, 0.282],
+  classNumber: [0.56, 0.282],
   name: [0.333, 0.326],
   birthDate: [0.67, 0.325],
   attendanceDateYear: [0.36, 0.56],

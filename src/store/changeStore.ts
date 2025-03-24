@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
-export interface IFFormData {
-  campusNumber: string;
+export interface AttendanceChangeForm {
+  classNumber: number;
+  campus: string;
   name: string;
   birthDate: string;
   reason: number;
-  campusName: string;
   attendanceDate: string;
   attendanceTime: string;
   changeDate: string;
@@ -15,14 +15,14 @@ export interface IFFormData {
 }
 
 interface AttendanceStore {
-  formData: IFFormData;
-  updateForm: (newData: Partial<IFFormData>) => void;
+  formData: AttendanceChangeForm;
+  updateForm: (newData: Partial<AttendanceChangeForm>) => void;
 }
 
-const initialFormData: IFFormData = {
-  campusNumber: "",
+const initialFormData: AttendanceChangeForm = {
+  classNumber: 0,
+  campus: "",
   name: "",
-  campusName: "",
   birthDate: "",
   reason: 0,
   attendanceDate: "",

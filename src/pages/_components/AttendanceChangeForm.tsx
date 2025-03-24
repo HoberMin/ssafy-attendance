@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,47 +14,68 @@ import {
   Pen,
   IdCard,
 } from "lucide-react";
-import useAttendanceStore from "@/store/changeStore";
+import useAttendanceStore, {
+  AttendanceChangeForm as StoreFormData,
+} from "@/store/changeStore";
 import { useRouter } from "next/router";
 import SignatureCanvas from "./SignatureCanvas";
-
-interface FormData {
-  location: string;
-  classNumber: string;
-  name: string;
-  campus: string;
-  birthDate: string;
-  reason: number;
-  attendanceDate: string;
-  attendanceTime: string;
-  changeDate: string;
-  changeTime: string;
-  changeReason: string;
-  signatureData: string | null;
-}
 
 const AttendanceChangeForm = () => {
   const router = useRouter();
 
-  const [formData, setFormData] = useState<FormData>({
-    location: "",
-    classNumber: "",
-    name: "",
-    campus: "",
-    birthDate: "",
-    reason: 0,
-    attendanceDate: "",
-    attendanceTime: "",
-    changeDate: "",
-    changeTime: "",
-    changeReason: "",
-    signatureData: null,
+  const { formData: storeData, updateForm } = useAttendanceStore();
+
+  const [formData, setFormData] = useState<StoreFormData>({
+    ...storeData,
   });
 
-  const locations = ["서울", "대전", "구미", "부울경", "대구"];
+  const locations = ["서울", "대전", "구미", "부울경", "광주"];
   const reasons = ["입실 미클릭", "입실 오클릭", "퇴실 미클릭", "퇴실 오클릭"];
 
-  const { updateForm } = useAttendanceStore();
+  useEffect(() => {
+    setFormData(storeData);
+  }, [storeData]);
+
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleBirthDateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numbers = value.replace(/\D/g, "");
+
+    let formattedDate = "";
+    for (let i = 0; i < numbers.length && i < 6; i++) {
+      if (i === 2 || i === 4) {
+        formattedDate += ".";
+      }
+      formattedDate += numbers[i];
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      birthDate: formattedDate,
+    }));
+  };
+
+  const handleLimitedTextChange = (
+    e: ChangeEvent<HTMLTextAreaElement>,
+    maxLength: number
+  ) => {
+    const { name, value } = e.target;
+    if (value.length <= maxLength) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
 
   const handleSignatureChange = (signatureData: string | null) => {
     setFormData((prev) => ({
@@ -63,13 +84,9 @@ const AttendanceChangeForm = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    updateForm({
-      ...formData,
-      campusName: formData.location,
-      campusNumber: formData.classNumber,
-    });
+    updateForm(formData);
     router.push("/preview2");
   };
 
@@ -77,23 +94,19 @@ const AttendanceChangeForm = () => {
     <Card className="w-full max-w-2xl mx-auto bg-white shadow-lg">
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 지역 선택 */}
           <div className="space-y-2">
             <Label
-              htmlFor="location"
+              htmlFor="campus"
               className="flex items-center gap-2 text-sm font-medium"
-              aria-label="지역 선택"
             >
               <MapPin className="w-4 h-4 text-[#3396f4]" />
               지역
             </Label>
             <select
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, location: e.target.value }))
-              }
+              id="campus"
+              name="campus"
+              value={formData.campus || ""}
+              onChange={handleInputChange}
               className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
             >
@@ -106,7 +119,6 @@ const AttendanceChangeForm = () => {
             </select>
           </div>
 
-          {/* 반 번호 */}
           <div className="space-y-2">
             <Label
               htmlFor="classNumber"
@@ -115,21 +127,24 @@ const AttendanceChangeForm = () => {
               <Users className="w-4 h-4 text-[#3396f4]" />반
             </Label>
             <Input
-              type="text"
+              type="number"
               id="classNumber"
-              value={formData.classNumber}
-              onChange={(e) =>
+              name="classNumber"
+              value={formData.classNumber || ""}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 0;
                 setFormData((prev) => ({
                   ...prev,
-                  classNumber: e.target.value,
-                }))
-              }
+                  classNumber: value,
+                }));
+              }}
+              min={1}
+              max={30}
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
             />
           </div>
 
-          {/* 성명 */}
           <div className="space-y-2">
             <Label
               htmlFor="name"
@@ -141,16 +156,14 @@ const AttendanceChangeForm = () => {
             <Input
               type="text"
               id="name"
+              name="name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={handleInputChange}
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
             />
           </div>
 
-          {/* 생년월일 */}
           <div className="space-y-2">
             <Label
               htmlFor="birthDate"
@@ -162,25 +175,10 @@ const AttendanceChangeForm = () => {
             <Input
               type="text"
               id="birthDate"
+              name="birthDate"
               placeholder="YY.MM.DD"
               value={formData.birthDate}
-              onChange={(e) => {
-                const value = e.target.value;
-                const numbers = value.replace(/\D/g, "");
-
-                let formattedDate = "";
-                for (let i = 0; i < numbers.length && i < 6; i++) {
-                  if (i === 2 || i === 4) {
-                    formattedDate += ".";
-                  }
-                  formattedDate += numbers[i];
-                }
-
-                setFormData((prev) => ({
-                  ...prev,
-                  birthDate: formattedDate,
-                }));
-              }}
+              onChange={handleBirthDateChange}
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               required
             />
@@ -194,7 +192,10 @@ const AttendanceChangeForm = () => {
             <RadioGroup
               value={formData.reason.toString()}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, reason: parseInt(value) }))
+                setFormData((prev) => ({
+                  ...prev,
+                  reason: parseInt(value),
+                }))
               }
               className="grid grid-cols-2 gap-4"
             >
@@ -230,24 +231,16 @@ const AttendanceChangeForm = () => {
             <div className="grid grid-cols-2 gap-4">
               <Input
                 type="date"
+                name="attendanceDate"
                 value={formData.attendanceDate}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    attendanceDate: e.target.value,
-                  }))
-                }
+                onChange={handleInputChange}
                 className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               />
               <Input
                 type="time"
+                name="attendanceTime"
                 value={formData.attendanceTime}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    attendanceTime: e.target.value,
-                  }))
-                }
+                onChange={handleInputChange}
                 className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               />
             </div>
@@ -261,25 +254,17 @@ const AttendanceChangeForm = () => {
             <div className="grid grid-cols-2 gap-4">
               <Input
                 type="date"
+                name="changeDate"
                 value={formData.changeDate}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    changeDate: e.target.value,
-                  }))
-                }
+                onChange={handleInputChange}
                 className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
                 required
               />
               <Input
                 type="time"
+                name="changeTime"
                 value={formData.changeTime}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    changeTime: e.target.value,
-                  }))
-                }
+                onChange={handleInputChange}
                 className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
                 required
               />
@@ -296,15 +281,9 @@ const AttendanceChangeForm = () => {
             </Label>
             <textarea
               id="changeReason"
+              name="changeReason"
               value={formData.changeReason}
-              onChange={(e) => {
-                if (e.target.value.length <= 60) {
-                  setFormData((prev) => ({
-                    ...prev,
-                    changeReason: e.target.value,
-                  }));
-                }
-              }}
+              onChange={(e) => handleLimitedTextChange(e, 60)}
               className="w-full p-2 border rounded-md min-h-[80px] resize-none 
                        focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
               maxLength={60}

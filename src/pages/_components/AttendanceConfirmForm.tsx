@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -74,15 +74,13 @@ const AbsenceForm = () => {
   const locations = ["서울", "대전", "구미", "부울경", "광주"];
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
 
     if (name === "name") {
-      if (value.length > 5) return;
-
-      if (!/^[ㄱ-ㅎㅏ-ㅣ가-힣]*$/.test(value)) return;
-
+      if (value.length > 20) return;
+      if (!/^[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z\s]*$/.test(value)) return;
       setFormData((prev) => ({ ...prev, name: value }));
       return;
     }
@@ -96,17 +94,29 @@ const AbsenceForm = () => {
       return;
     }
 
-    if (name === "birthday") {
-      const numbers = value.replace(/\D/g, "");
-      const formattedDate = numbers
-        .slice(0, 6)
-        .split("")
-        .reduce((acc, digit, i) => {
-          if (i === 2 || i === 4) return `${acc}-${digit}`;
-          return acc + digit;
-        }, "");
+    if (name === "birthday" || name === "absenceDate") {
+      const numbers = value.replace(/\D/g, "").slice(0, 8);
+      let formattedDate = "";
 
-      setFormData((prev) => ({ ...prev, birthday: formattedDate }));
+      if (numbers.length === 0) {
+        setFormData((prev) => ({ ...prev, [name]: "" }));
+        return;
+      }
+
+      if (numbers.length <= 4) {
+        formattedDate = numbers;
+      } else if (numbers.length <= 6) {
+        formattedDate = numbers.slice(0, 4) + "-" + numbers.slice(4);
+      } else {
+        formattedDate =
+          numbers.slice(0, 4) +
+          "-" +
+          numbers.slice(4, 6) +
+          "-" +
+          numbers.slice(6, 8);
+      }
+
+      setFormData((prev) => ({ ...prev, [name]: formattedDate }));
       return;
     }
 
@@ -147,11 +157,18 @@ const AbsenceForm = () => {
         ? await convertFileToBase64(documentFile)
         : "";
 
-      // 날짜를 분리
-      const date = new Date(formData.absenceDate);
-      const year = date.getFullYear().toString().slice(2); // YY
-      const month = (date.getMonth() + 1).toString().padStart(2, "0"); // MM
-      const day = date.getDate().toString().padStart(2, "0"); // DD
+      let year = "",
+        month = "",
+        day = "";
+
+      if (formData.absenceDate) {
+        const dateParts = formData.absenceDate.split("-");
+        if (dateParts.length === 3) {
+          year = dateParts[0].slice(2);
+          month = dateParts[1];
+          day = dateParts[2];
+        }
+      }
 
       const transformedData: TransformedData = {
         ...formData,
@@ -198,8 +215,6 @@ const AbsenceForm = () => {
               ))}
             </select>
           </div>
-
-          {/* 반 번호 */}
           <div className="space-y-2">
             <Label
               htmlFor="class"
@@ -219,8 +234,6 @@ const AbsenceForm = () => {
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
           </div>
-
-          {/* 이름 */}
           <div className="space-y-2">
             <Label
               htmlFor="name"
@@ -241,8 +254,6 @@ const AbsenceForm = () => {
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
           </div>
-
-          {/* 생년월일 */}
           <div className="space-y-2">
             <Label
               htmlFor="birthday"
@@ -255,15 +266,14 @@ const AbsenceForm = () => {
               type="text"
               id="birthday"
               name="birthday"
-              placeholder="YY-MM-DD"
+              placeholder="YYYY-MM-DD"
               value={formData.birthday}
               onChange={handleInputChange}
               required
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
+            <p className="text-xs text-gray-500">예시: 1998-01-01</p>
           </div>
-
-          {/* 결석일시 변경 */}
           <div className="space-y-2">
             <Label
               htmlFor="absenceDate"
@@ -273,14 +283,16 @@ const AbsenceForm = () => {
               결석일시
             </Label>
             <Input
-              type="date"
+              type="text"
               id="absenceDate"
               name="absenceDate"
+              placeholder="YYYY-MM-DD"
               value={formData.absenceDate}
               onChange={handleInputChange}
               required
               className="focus:ring-2 focus:ring-[#3396f4] focus:border-[#3396f4]"
             />
+            <p className="text-xs text-gray-500">예시: 2024-03-24</p>
           </div>
 
           {/* 장소 */}
@@ -303,7 +315,6 @@ const AbsenceForm = () => {
             />
           </div>
 
-          {/* 분류 부분 */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Clock className="w-4 h-4 text-[#3396f4]" />

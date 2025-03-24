@@ -177,8 +177,10 @@ const AttendancePreview = () => {
 
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight, "", "FAST");
       pdf.save(
-        `${parsedUserInput.attendanceDateYear}${parsedUserInput.attendanceDateMonth}${parsedUserInput.attendanceDateDay}_출결변경요청서_${userInput.name}[${userInput.campusName}_${userInput.campusNumber}반].pdf`
+        `${parsedUserInput.changeDateYear}${parsedUserInput.changeDateMonth}${parsedUserInput.changeDateDay}_출결변경요청서_${userInput.name}[${userInput.campusName}_${userInput.campusNumber}반].pdf`
       );
+
+      console.log(parsedUserInput);
     } catch {
       //
     }

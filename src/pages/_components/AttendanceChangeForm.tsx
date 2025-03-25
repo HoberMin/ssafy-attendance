@@ -19,6 +19,7 @@ import useAttendanceStore, {
 } from "@/store/changeStore";
 import { useRouter } from "next/router";
 import SignatureCanvas from "./SignatureCanvas";
+import { addClassRecord } from "@/utils/supabaseClient";
 
 const AttendanceChangeForm = () => {
   const router = useRouter();
@@ -84,9 +85,10 @@ const AttendanceChangeForm = () => {
     }));
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     updateForm(formData);
+    await addClassRecord(formData.campus, String(formData.classNumber));
     router.push("/preview2");
   };
 

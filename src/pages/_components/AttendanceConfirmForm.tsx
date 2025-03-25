@@ -24,6 +24,7 @@ import {
 } from "@/store/confirmStore";
 import { convertBase64ToFile, convertFileToBase64 } from "@/lib/utils";
 import SignatureCanvas from "./SignatureCanvas";
+import { addClassRecord } from "@/utils/supabaseClient";
 
 interface ExtendedTransformedData extends TransformedData {
   absenceDate: string;
@@ -180,6 +181,11 @@ const AbsenceForm = () => {
       };
 
       setConfirmForm(transformedData);
+      await addClassRecord(
+        transformedData.campus,
+        String(transformedData.class)
+      );
+
       router.push("/preview");
     } catch (error) {
       console.error("파일 변환 중 에러 발생:", error);

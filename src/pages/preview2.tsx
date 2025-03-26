@@ -102,12 +102,26 @@ const AttendancePreview = () => {
         Object.keys(coordinate).forEach((key) => {
           const coord = coordinate[key];
           let value = textData[key] || "";
-
-          ctx1.fillText(
-            String(value),
-            coord[0] * canvasSize.width,
-            coord[1] * canvasSize.height
-          );
+          if (key === "changeReason") {
+            const firstLine = value.slice(0, 30);
+            const secondLine = value.slice(30, 60);
+            ctx1.fillText(
+              firstLine,
+              coord[0] * canvasSize.width,
+              coord[1] * canvasSize.height
+            );
+            ctx1.fillText(
+              secondLine,
+              coord[0] * canvasSize.width,
+              (coord[1] + 0.02) * canvasSize.height
+            );
+          } else {
+            ctx1.fillText(
+              String(value),
+              coord[0] * canvasSize.width,
+              coord[1] * canvasSize.height
+            );
+          }
         });
       };
       renderText(TEXT_COORD, parsedUserInput);

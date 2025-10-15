@@ -181,10 +181,16 @@ const AbsenceForm = () => {
       };
 
       setConfirmForm(transformedData);
-      await addClassRecord(
-        transformedData.campus,
-        String(transformedData.class)
-      );
+
+      // Supabase 실패해도 계속 진행
+      try {
+        await addClassRecord(
+          transformedData.campus,
+          String(transformedData.class)
+        );
+      } catch (error) {
+        console.warn("통계 기록 실패:", error);
+      }
 
       router.push("/preview");
     } catch (error) {

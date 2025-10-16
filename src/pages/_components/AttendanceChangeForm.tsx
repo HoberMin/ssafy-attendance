@@ -88,7 +88,14 @@ const AttendanceChangeForm = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     updateForm(formData);
-    await addClassRecord(formData.campus, String(formData.classNumber));
+
+    // Supabase 실패해도 계속 진행
+    try {
+      await addClassRecord(formData.campus, String(formData.classNumber));
+    } catch (error) {
+      console.warn("통계 기록 실패 :", error);
+    }
+
     router.push("/preview2");
   };
 
